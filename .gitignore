@@ -1,4 +1,3 @@
-# Cursor — keep local; do not push AI rules/skills to GitHub
 .cursor/
 
 node_modules/
@@ -10,9 +9,9 @@ coverage/
 .turbo/
 
 .env
+.env.example
 .env.local
 .env.*.local
-!.env.example
 
 .DS_Store
 *.log
