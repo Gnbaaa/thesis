@@ -1,3 +1,4 @@
+# CD: backend-ийг Render руу push үед автоматаар deploy
 name: Deploy backend (Render)
 
 on:

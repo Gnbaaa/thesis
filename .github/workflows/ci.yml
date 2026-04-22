@@ -1,3 +1,4 @@
+# CI/CD: GitHub Actions — backend/frontend автомат шалгалт (lint, typecheck, test, build)
 name: CI
 
 on:

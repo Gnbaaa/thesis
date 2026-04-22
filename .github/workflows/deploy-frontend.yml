@@ -1,3 +1,4 @@
+# CD: frontend-ийг Vercel руу push үед автоматаар deploy
 name: Deploy frontend (Vercel)
 
 on:
