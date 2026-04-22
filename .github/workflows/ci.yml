@@ -6,12 +6,15 @@ on:
   push:
     branches: [main]
 
+# Ижил branch дээр дараалан push хийвэл зөвхөн хамгийн сүүлийн CI ажиллана (хуучин нь цуцлагдана).
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
+  # GitHub Actions JS actions (checkout, setup-node, …) — Node 24 runtime (2026 deprecation)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: '22'
 
 jobs:
   backend:
@@ -71,10 +74,10 @@ jobs:
       GOOGLE_OAUTH_CLIENT_SECRET: ci-placeholder
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -100,7 +103,7 @@ jobs:
 
       - name: Upload backend coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: backend-coverage
           path: backend/coverage
@@ -120,10 +123,10 @@ jobs:
       VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -146,7 +149,7 @@ jobs:
 
       - name: Upload frontend coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frontend-coverage
           path: frontend/coverage
@@ -154,7 +157,7 @@ jobs:
           retention-days: 14
 
       - name: Upload frontend build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frontend-dist
           path: frontend/dist
