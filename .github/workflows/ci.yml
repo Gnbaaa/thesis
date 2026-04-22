@@ -70,7 +70,7 @@ jobs:
       GOOGLE_OAUTH_CLIENT_SECRET: ci-placeholder
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -119,7 +119,7 @@ jobs:
       VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
