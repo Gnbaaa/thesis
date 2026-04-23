@@ -7,6 +7,10 @@ coverage/
 .cache/
 .vite/
 .turbo/
+.vercel/
+
+# TypeScript / tooling
+.eslintcache
 
 .env
 .env.example
@@ -25,3 +29,7 @@ yarn-error.log*
 !.vscode/settings.json.example
 
 *.tsbuildinfo
+
+# Local DB / misc
+*.sqlite
+*.sqlite3

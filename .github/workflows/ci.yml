@@ -49,21 +49,10 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     env:
       NODE_ENV: test
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/pet_platform_test
       MONGODB_URL: mongodb://localhost:27017/pet_platform_test
-      REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-secret
       STRIPE_SECRET_KEY: sk_test_ci_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
