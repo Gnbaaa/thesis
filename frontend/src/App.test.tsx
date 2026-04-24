@@ -21,7 +21,9 @@ describe('App', () => {
   it('renders home heading in Mongolian', async () => {
     renderWithProviders(<App />, '/');
     expect(
-      await screen.findByRole('heading', { name: /Тэжээвэр амьтдын нэгдсэн платформ/i }),
+      await screen.findByRole('heading', {
+        name: /Тэжээвэр амьтан үрчлүүлэх болон\s*хандив цуглуулах нэгдсэн платформ/i,
+      }),
     ).toBeInTheDocument();
   });
 
