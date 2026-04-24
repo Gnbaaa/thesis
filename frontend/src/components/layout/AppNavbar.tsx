@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, MessageCircle, User } from 'lucide-react';
+import { Bell, Menu, MessageCircle, PawPrint, User, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
 import { clearAuthSession, getAuthPictureUrl, useIsLoggedIn } from '@/lib/authSession';
@@ -10,7 +10,7 @@ const iconStroke = 1.75;
 
 function navCircleClassName(isActive?: boolean) {
   return cn(
-    'flex size-9 shrink-0 items-center justify-center rounded-full border border-border-card bg-surface-hover text-text-muted transition-colors',
+    'size-9 shrink-0 items-center justify-center rounded-full border border-border-card bg-surface-hover text-text-muted transition-colors',
     isActive && 'ring-1 ring-text-heading/15 dark:ring-white/20',
   );
 }
@@ -20,22 +20,28 @@ export function AppNavbar() {
   const navigate = useNavigate();
   const loggedIn = useIsLoggedIn();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileWrapRef = useRef<HTMLDivElement>(null);
+  const mobileMenuWrapRef = useRef<HTMLDivElement>(null);
   const profileImageUrl = loggedIn ? getAuthPictureUrl() : null;
   const [avatarFailedUrl, setAvatarFailedUrl] = useState<string | null>(null);
   const showProfilePhoto =
     Boolean(profileImageUrl) && avatarFailedUrl !== profileImageUrl;
 
   useEffect(() => {
-    if (!profileOpen) return;
+    if (!profileOpen && !mobileMenuOpen) return;
     const close = (e: MouseEvent) => {
-      if (profileWrapRef.current && !profileWrapRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (profileWrapRef.current && !profileWrapRef.current.contains(target)) {
         setProfileOpen(false);
+      }
+      if (mobileMenuWrapRef.current && !mobileMenuWrapRef.current.contains(target)) {
+        setMobileMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [profileOpen]);
+  }, [profileOpen, mobileMenuOpen]);
 
   const centerLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -45,16 +51,155 @@ export function AppNavbar() {
 
   return (
     <header className="sticky top-0 z-20 shrink-0 border-b border-border-card bg-surface">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-20">
+      <div className="relative mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:gap-4 sm:px-6 md:px-8 lg:px-20">
         <Link
           to="/"
-          className={cn('shrink-0 text-xl font-bold tracking-tight text-text-heading', focusRing, 'rounded-sm')}
+          className={cn(
+            'flex size-9 shrink-0 items-center justify-center rounded-full border border-border-card bg-surface-hover text-text-heading transition-opacity hover:opacity-90',
+            focusRing,
+          )}
+          aria-label="Нүүр хуудас"
         >
-          {t('auth.logo')}
+          <PawPrint className="size-[18px]" strokeWidth={1.75} aria-hidden />
         </Link>
 
+        <div className="relative ml-auto sm:hidden" ref={mobileMenuWrapRef}>
+          <button
+            type="button"
+            className={cn(
+              'inline-flex size-9 items-center justify-center rounded-full border border-border-card bg-surface-hover text-text-muted transition-opacity hover:opacity-90',
+              focusRing,
+            )}
+            aria-expanded={mobileMenuOpen}
+            aria-haspopup="menu"
+            aria-label="Цэс"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+          >
+            {mobileMenuOpen ? <X className="size-[18px]" strokeWidth={1.75} aria-hidden /> : <Menu className="size-[18px]" strokeWidth={1.75} aria-hidden />}
+          </button>
+
+          {mobileMenuOpen ? (
+            <div
+              className="absolute right-0 z-30 mt-2 min-w-[200px] rounded-lg border border-border-card bg-surface py-1 shadow-md"
+              role="menu"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/pets');
+                }}
+              >
+                {t('auth.nav.pets')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/volunteer');
+                }}
+              >
+                {t('auth.nav.volunteer')}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/donations');
+                }}
+              >
+                {t('auth.nav.donations')}
+              </button>
+
+              {loggedIn ? (
+                <>
+                  <div className="my-1 h-px bg-border-card" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/profile');
+                    }}
+                  >
+                    {t('profile.menuProfile')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/chat');
+                    }}
+                  >
+                    {t('auth.nav.chat')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/notifications');
+                    }}
+                  >
+                    {t('auth.nav.notifications')}
+                  </button>
+                  <div className="my-1 h-px bg-border-card" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      clearAuthSession();
+                      navigate('/', { replace: true });
+                    }}
+                  >
+                    {t('auth.nav.logout')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="my-1 h-px bg-border-card" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/login');
+                    }}
+                  >
+                    {t('auth.nav.login')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/register');
+                    }}
+                  >
+                    {t('auth.nav.register')}
+                  </button>
+                </>
+              )}
+            </div>
+          ) : null}
+        </div>
+
         <nav
-          className="flex min-w-0 flex-1 items-center justify-center gap-4 sm:gap-6 md:gap-7"
+          className="hidden min-w-0 items-center gap-4 sm:absolute sm:left-1/2 sm:flex sm:-translate-x-1/2 sm:gap-6 md:gap-7"
           aria-label="Main"
         >
           <NavLink to="/pets" className={centerLinkClass} end>
@@ -68,12 +213,12 @@ export function AppNavbar() {
           </NavLink>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
           {loggedIn ? (
             <>
               <NavLink
                 to="/chat"
-                className={({ isActive }) => cn(navCircleClassName(isActive), focusRing)}
+                className={({ isActive }) => cn(navCircleClassName(isActive), focusRing, 'hidden sm:flex')}
                 aria-label={t('auth.nav.chat')}
                 title={t('auth.nav.chat')}
               >
@@ -81,7 +226,7 @@ export function AppNavbar() {
               </NavLink>
               <NavLink
                 to="/notifications"
-                className={({ isActive }) => cn(navCircleClassName(isActive), focusRing)}
+                className={({ isActive }) => cn(navCircleClassName(isActive), focusRing, 'hidden sm:flex')}
                 aria-label={t('auth.nav.notifications')}
                 title={t('auth.nav.notifications')}
               >
@@ -91,7 +236,7 @@ export function AppNavbar() {
                 <button
                   type="button"
                   className={cn(
-                    'flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-card bg-surface-hover text-text-muted transition-opacity hover:opacity-90',
+                    'hidden sm:flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-card bg-surface-hover text-text-muted transition-opacity hover:opacity-90',
                     focusRing,
                   )}
                   aria-expanded={profileOpen}
@@ -170,13 +315,13 @@ export function AppNavbar() {
             </>
           ) : (
             <>
-              <NavLink to="/login" className={centerLinkClass}>
+              <NavLink to="/login" className={({ isActive }) => cn('hidden sm:inline-flex', centerLinkClass({ isActive }))}>
                 {t('auth.nav.login')}
               </NavLink>
               <Link
                 to="/register"
                 className={cn(
-                  'rounded-lg border border-border-input bg-surface-card px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-hover sm:px-4',
+                  'hidden sm:inline-flex rounded-lg border border-border-input bg-surface-card px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-hover sm:px-4',
                   focusRing,
                 )}
               >

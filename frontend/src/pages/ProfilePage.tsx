@@ -56,7 +56,7 @@ export default function ProfilePage() {
 
   return (
     <section className="w-full max-w-[920px]">
-      <div className="flex items-start gap-6">
+      <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-start sm:gap-6">
         <div className="mt-1 flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-hover">
           {pic ? (
             <img src={pic} alt="" className="size-full object-cover" referrerPolicy="no-referrer" />
@@ -73,7 +73,7 @@ export default function ProfilePage() {
           </span>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0 sm:self-start">
           <input
             ref={fileRef}
             type="file"
@@ -98,7 +98,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-6 rounded-card border border-border-card bg-surface-card">
-        <div className="flex items-center justify-between border-b border-border-card px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border-card px-4 py-4 sm:px-6">
           <h2 className="text-sm font-semibold text-text-heading">{t('profile.sectionTitle')}</h2>
           <button type="button" className={cn(btnSecondary, focusRing, 'h-9 w-auto px-4')} disabled>
             {t('profile.edit')}
@@ -132,7 +132,7 @@ export default function ProfilePage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[160px_1fr] gap-4 px-6 py-4">
+    <div className="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-[160px_1fr] sm:gap-4 sm:px-6">
       <dt className="text-sm text-text-muted">{label}</dt>
       <dd className="text-sm text-text-secondary">{value}</dd>
     </div>

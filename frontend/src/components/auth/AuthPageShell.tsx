@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { PawPrint } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { focusRingOnAuthPanel } from '@/lib/uiClasses';
 
@@ -24,19 +25,17 @@ export function AuthPageShell({ children, className }: Props) {
           <Link
             to="/"
             className={cn(
-              'inline-block text-sm font-semibold tracking-tight text-on-auth-panel transition-opacity hover:opacity-95',
+              'inline-flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-on-auth-panel transition-opacity hover:opacity-95',
               focusRingOnAuthPanel,
-              'rounded-sm',
             )}
+            aria-label="Нүүр хуудас"
           >
-            {t('auth.logo')}
+            <PawPrint className="size-[18px]" strokeWidth={1.75} aria-hidden />
           </Link>
           <h2 className="mt-6 text-xl font-semibold leading-snug tracking-tight sm:mt-8 sm:text-2xl">
             {t('home.title')}
           </h2>
-          <p className="mt-3 max-w-[28ch] text-sm leading-relaxed text-on-auth-panel-muted">{t('home.subtitle')}</p>
         </div>
-        <p className="hidden text-xs leading-relaxed text-on-auth-panel-faint lg:block">{t('auth.shell.footerNote')}</p>
       </aside>
 
       <div className="flex flex-1 flex-col justify-center px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">{children}</div>
