@@ -51,3 +51,13 @@ export async function setAvatarPublicId(params: { userId: string; avatarPublicId
   );
 }
 
+export async function setRole(params: { userId: string; role: string }): Promise<void> {
+  await getPool().query(
+    `UPDATE users
+     SET role = $2,
+         updated_at = now()
+     WHERE id = $1`,
+    [params.userId, params.role],
+  );
+}
+

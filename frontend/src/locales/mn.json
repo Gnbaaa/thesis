@@ -101,4 +101,90 @@
     ,
     "uploadPhoto": "Зураг солих"
   }
+  ,
+  "ngo": {
+    "apply": {
+      "title": "ТББ болох хүсэлт илгээх",
+      "subtitle": "Та Төрийн бус байгууллагаар бүртгүүлэх хүсэлтээ илгээнэ үү.",
+      "orgName": "Байгууллагын нэр",
+      "orgNamePlaceholder": "Байгууллагын нэрээ оруулна уу",
+      "regNumber": "Байгууллагын регистрийн дугаар",
+      "regNumberPlaceholder": "Регистрийн дугаар оруулна уу",
+      "orgAddress": "Байгууллагын хаяг",
+      "orgAddressPlaceholder": "Дүүрэг, хороо, гудамж",
+      "activityDirection": "Үйл ажиллагааны чиглэл",
+      "activityDirectionPlaceholder": "Үйл ажиллагааны чиглэлээ бичнэ үү",
+      "contactPhone": "Холбоо барих утас",
+      "contactPhonePlaceholder": "Утасны дугаар",
+      "contactEmail": "Холбоо барих и-мэйл",
+      "contactEmailPlaceholder": "Байгууллагын и-мэйл",
+      "description": "Тайлбар",
+      "descriptionPlaceholder": "Нэмэлт тайлбар бичнэ үү...",
+      "document": "Баримт бичиг",
+      "documentHint": "Файл чирж эсвэл сонгох",
+      "documentTypes": "PDF, JPG, PNG (хамгийн ихдээ {{maxMb}}MB)",
+      "chooseFile": "Файл сонгох",
+      "selectedFile": "Сонгосон файл",
+      "documentRequired": "Баримт бичиг заавал",
+      "submittedDate": "Илгээсэн огноо",
+      "status": "Төлөв",
+      "statusPending": "Илгээгдүй",
+      "submit": "Илгээх",
+      "cancel": "Болих"
+    }
+  },
+  "admin": {
+    "nav": {
+      "ngoApplications": "ТББ болох хүсэлтүүд",
+      "userAccess": "Хэрэглэгчийн эрх удирдах"
+    },
+    "ngo": {
+      "title": "ТББ болох хүсэлтүүд",
+      "total": "Нийт: {{count}} хүсэлт",
+      "searchPlaceholder": "Хайх...",
+      "filter": {
+        "all": "Төлөв: Бүгд",
+        "pending": "Хүлээгдэж буй",
+        "approved": "Зөвшөөрсөн",
+        "rejected": "Татгалзсан"
+      },
+      "cols": {
+        "requester": "Хүсэлт гаргагч",
+        "org": "Байгууллагын нэр",
+        "date": "Илгээсэн огноо",
+        "status": "Төлөв",
+        "action": "Үйлдэл"
+      },
+      "status": {
+        "pending": "Хүлээгдэж буй",
+        "approved": "Зөвшөөрсөн",
+        "rejected": "Татгалзсан"
+      },
+      "details": "Дэлгэрэнгүй",
+      "empty": "Мэдээлэл алга",
+      "prev": "Өмнөх",
+      "next": "Дараах",
+      "backToList": "Хүсэлтүүд рүү буцах",
+      "detail": {
+        "title": "Хүсэлтийн дэлгэрэнгүй",
+        "sectionInfo": "Хүсэлт гаргагчийн мэдээлэл",
+        "sectionDesc": "Тайлбар",
+        "sectionDocs": "Баримт бичиг",
+        "sectionActions": "Үйлдэл",
+        "requesterName": "Хэрэглэгчийн нэр",
+        "orgName": "Байгууллагын нэр",
+        "regNumber": "Байгууллагын регистр",
+        "email": "И-мэйл",
+        "phone": "Утасны дугаар",
+        "address": "Байгууллагын хаяг",
+        "direction": "Үйл ажиллагааны чиглэл",
+        "submittedAt": "Илгээсэн огноо",
+        "document": "Баримт бичиг",
+        "download": "Татах",
+        "approve": "Батлах",
+        "reject": "Татгалзах",
+        "back": "Буцах"
+      }
+    }
+  }
 }

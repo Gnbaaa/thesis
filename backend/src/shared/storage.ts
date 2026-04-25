@@ -4,6 +4,7 @@ import { ExternalServiceError, ValidationError } from './errors';
 export type UploadResult = {
   publicId: string;
   resourceType: 'image' | 'video' | 'raw';
+  originalFilename?: string;
   format?: string;
   bytes: number;
   width?: number;
@@ -45,6 +46,11 @@ function sniffImageType(buf: Buffer): 'jpg' | 'png' | 'gif' | 'webp' | null {
   return null;
 }
 
+function isPdf(buf: Buffer): boolean {
+  // PDF: 25 50 44 46 2D  => "%PDF-"
+  return buf.length >= 5 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46 && buf[4] === 0x2d;
+}
+
 export async function uploadImage(params: { buffer: Buffer; folder: string }): Promise<UploadResult> {
   ensureCloudinaryConfigured();
 
@@ -62,11 +68,51 @@ export async function uploadImage(params: { buffer: Buffer; folder: string }): P
   return {
     publicId: res.public_id,
     resourceType: 'image',
+    originalFilename: res.original_filename,
     format: res.format,
     bytes: res.bytes,
     width: res.width,
     height: res.height,
   };
+}
+
+export async function uploadNgoDocument(params: { buffer: Buffer; folder: string }): Promise<UploadResult> {
+  ensureCloudinaryConfigured();
+
+  const imgType = sniffImageType(params.buffer);
+  if (imgType) {
+    const dataUri = `data:image/${imgType};base64,${params.buffer.toString('base64')}`;
+    const res = await cloudinary.uploader.upload(dataUri, {
+      folder: params.folder,
+      resource_type: 'image',
+    });
+    return {
+      publicId: res.public_id,
+      resourceType: 'image',
+      originalFilename: res.original_filename,
+      format: res.format,
+      bytes: res.bytes,
+      width: res.width,
+      height: res.height,
+    };
+  }
+
+  if (isPdf(params.buffer)) {
+    const dataUri = `data:application/pdf;base64,${params.buffer.toString('base64')}`;
+    const res = await cloudinary.uploader.upload(dataUri, {
+      folder: params.folder,
+      resource_type: 'raw',
+    });
+    return {
+      publicId: res.public_id,
+      resourceType: 'raw',
+      originalFilename: res.original_filename,
+      format: res.format,
+      bytes: res.bytes,
+    };
+  }
+
+  throw new ValidationError('Баримт бичиг буруу байна (PDF эсвэл зураг)');
 }
 
 export function getImageUrl(publicId: string, opts?: { width?: number }): string {
@@ -79,6 +125,11 @@ export function getImageUrl(publicId: string, opts?: { width?: number }): string
       ...(opts?.width ? [{ width: opts.width, crop: 'limit' }] : []),
     ],
   });
+}
+
+export function getRawUrl(publicId: string): string {
+  ensureCloudinaryConfigured();
+  return cloudinary.url(publicId, { secure: true, resource_type: 'raw' });
 }
 
 export async function remove(publicId: string): Promise<void> {

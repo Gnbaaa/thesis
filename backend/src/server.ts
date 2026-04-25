@@ -9,6 +9,7 @@ import { googleOAuthIsConfigured } from './modules/auth/oauth.adapter';
 import { authRouter } from './modules/auth/auth.routes';
 import { uploadsRouter } from './modules/uploads/uploads.routes';
 import { usersRouter } from './modules/users/users.routes';
+import { ngoRouter } from './modules/ngo/ngo.routes';
 import { errorMiddleware } from './shared/error-middleware';
 
 const app = express();
@@ -38,6 +39,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/uploads', uploadsRouter);
+app.use('/api/v1/ngo', ngoRouter);
 
 app.use(errorMiddleware);
 

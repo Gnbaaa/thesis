@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell, Menu, MessageCircle, PawPrint, User, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
-import { clearAuthSession, getAuthPictureUrl, useIsLoggedIn } from '@/lib/authSession';
+import { clearAuthSession, getAuthPictureUrl, getAuthRole, useIsLoggedIn } from '@/lib/authSession';
 
 const iconStroke = 1.75;
 
@@ -19,6 +19,9 @@ export function AppNavbar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const loggedIn = useIsLoggedIn();
+  const role = loggedIn ? getAuthRole() : null;
+  const isAdmin = role === 'admin';
+  const isNgo = role === 'ngo';
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileWrapRef = useRef<HTMLDivElement>(null);
@@ -89,33 +92,49 @@ export function AppNavbar() {
                 className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  navigate('/pets');
+                  navigate(isAdmin ? '/admin/ngo-applications' : '/pets');
                 }}
               >
-                {t('auth.nav.pets')}
+                {isAdmin ? t('admin.nav.ngoApplications') : t('auth.nav.pets')}
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/volunteer');
-                }}
-              >
-                {t('auth.nav.volunteer')}
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/donations');
-                }}
-              >
-                {t('auth.nav.donations')}
-              </button>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/admin/users');
+                  }}
+                >
+                  {t('admin.nav.userAccess')}
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/volunteer');
+                    }}
+                  >
+                    {t('auth.nav.volunteer')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/donations');
+                    }}
+                  >
+                    {t('auth.nav.donations')}
+                  </button>
+                </>
+              )}
 
               {loggedIn ? (
                 <>
@@ -131,6 +150,19 @@ export function AppNavbar() {
                   >
                     {t('profile.menuProfile')}
                   </button>
+                  {!isAdmin && !isNgo ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate('/ngo/apply');
+                      }}
+                    >
+                      {t('profile.menuNgoRequest')}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     role="menuitem"
@@ -202,15 +234,28 @@ export function AppNavbar() {
           className="hidden min-w-0 items-center gap-4 sm:absolute sm:left-1/2 sm:flex sm:-translate-x-1/2 sm:gap-6 md:gap-7"
           aria-label="Main"
         >
-          <NavLink to="/pets" className={centerLinkClass} end>
-            {t('auth.nav.pets')}
-          </NavLink>
-          <NavLink to="/volunteer" className={centerLinkClass}>
-            {t('auth.nav.volunteer')}
-          </NavLink>
-          <NavLink to="/donations" className={centerLinkClass}>
-            {t('auth.nav.donations')}
-          </NavLink>
+          {isAdmin ? (
+            <>
+              <NavLink to="/admin/ngo-applications" className={centerLinkClass}>
+                {t('admin.nav.ngoApplications')}
+              </NavLink>
+              <NavLink to="/admin/users" className={centerLinkClass}>
+                {t('admin.nav.userAccess')}
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <NavLink to="/pets" className={centerLinkClass} end>
+                {t('auth.nav.pets')}
+              </NavLink>
+              <NavLink to="/volunteer" className={centerLinkClass}>
+                {t('auth.nav.volunteer')}
+              </NavLink>
+              <NavLink to="/donations" className={centerLinkClass}>
+                {t('auth.nav.donations')}
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
@@ -274,28 +319,32 @@ export function AppNavbar() {
                     >
                       {t('profile.menuProfile')}
                     </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        navigate('/pets');
-                      }}
-                    >
-                      {t('profile.menuDashboard')}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        navigate('/pets');
-                      }}
-                    >
-                      {t('profile.menuNgoRequest')}
-                    </button>
+                    {!isAdmin && !isNgo ? (
+                      <>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
+                          onClick={() => {
+                            setProfileOpen(false);
+                            navigate('/pets');
+                          }}
+                        >
+                          {t('profile.menuDashboard')}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
+                          onClick={() => {
+                            setProfileOpen(false);
+                            navigate('/ngo/apply');
+                          }}
+                        >
+                          {t('profile.menuNgoRequest')}
+                        </button>
+                      </>
+                    ) : null}
                     <div className="my-1 h-px bg-border-card" />
                     <button
                       type="button"

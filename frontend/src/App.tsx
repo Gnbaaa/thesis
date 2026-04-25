@@ -9,6 +9,9 @@ const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const NgoApplicationPage = lazy(() => import('@/pages/ngo/NgoApplicationPage'));
+const AdminNgoApplicationsPage = lazy(() => import('@/pages/admin/AdminNgoApplicationsPage'));
+const AdminNgoApplicationDetailPage = lazy(() => import('@/pages/admin/AdminNgoApplicationDetailPage'));
 const ComingSoonPage = lazy(() => import('@/pages/ComingSoonPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'));
 
@@ -45,6 +48,10 @@ export default function App() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="ngo/apply" element={<NgoApplicationPage />} />
+        <Route path="admin/ngo-applications" element={<AdminNgoApplicationsPage />} />
+        <Route path="admin/ngo-applications/:id" element={<AdminNgoApplicationDetailPage />} />
+        <Route path="admin/users" element={<ComingSoonPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         <Route path="pets" element={<ComingSoonPage />} />
         <Route path="donations" element={<ComingSoonPage />} />

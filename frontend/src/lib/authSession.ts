@@ -61,3 +61,15 @@ export function getAuthPictureUrl(): string | null {
     return null;
   }
 }
+
+export function getAuthRole(): string | null {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return null;
+    const payload = decodeJwtPayload(token);
+    const role = payload?.role;
+    return typeof role === 'string' && role.length > 0 ? role : null;
+  } catch {
+    return null;
+  }
+}
