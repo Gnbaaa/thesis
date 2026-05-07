@@ -10,6 +10,8 @@ import { authRouter } from './modules/auth/auth.routes';
 import { uploadsRouter } from './modules/uploads/uploads.routes';
 import { usersRouter } from './modules/users/users.routes';
 import { ngoRouter } from './modules/ngo/ngo.routes';
+import { petsRouter } from './modules/pets/pets.routes';
+import { adoptionRouter } from './modules/adoption/adoption.routes';
 import { errorMiddleware } from './shared/error-middleware';
 
 const app = express();
@@ -40,6 +42,8 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/uploads', uploadsRouter);
 app.use('/api/v1/ngo', ngoRouter);
+app.use('/api/v1/pets', petsRouter);
+app.use('/api/v1/adoption', adoptionRouter);
 
 app.use(errorMiddleware);
 

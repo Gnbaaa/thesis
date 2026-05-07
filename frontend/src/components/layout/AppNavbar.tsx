@@ -54,7 +54,7 @@ export function AppNavbar() {
 
   return (
     <header className="sticky top-0 z-20 shrink-0 border-b border-border-card bg-surface">
-      <div className="relative mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:gap-4 sm:px-6 md:px-8 lg:px-20">
+      <div className="relative mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:gap-4 sm:px-6 md:px-10 lg:px-28">
         <Link
           to="/"
           className={cn(
@@ -149,6 +149,17 @@ export function AppNavbar() {
                     }}
                   >
                     {t('profile.menuProfile')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-text hover:bg-surface-hover"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/dashboard');
+                    }}
+                  >
+                    {t('profile.menuDashboard')}
                   </button>
                   {!isAdmin && !isNgo ? (
                     <button
@@ -258,7 +269,7 @@ export function AppNavbar() {
           )}
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
+        <div className="hidden shrink-0 items-center gap-3 sm:ml-auto sm:flex sm:gap-4">
           {loggedIn ? (
             <>
               <NavLink
@@ -319,7 +330,7 @@ export function AppNavbar() {
                     >
                       {t('profile.menuProfile')}
                     </button>
-                    {!isAdmin && !isNgo ? (
+                    {loggedIn && !isAdmin ? (
                       <>
                         <button
                           type="button"
@@ -327,22 +338,24 @@ export function AppNavbar() {
                           className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
                           onClick={() => {
                             setProfileOpen(false);
-                            navigate('/pets');
+                            navigate('/dashboard');
                           }}
                         >
                           {t('profile.menuDashboard')}
                         </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
-                          onClick={() => {
-                            setProfileOpen(false);
-                            navigate('/ngo/apply');
-                          }}
-                        >
-                          {t('profile.menuNgoRequest')}
-                        </button>
+                        {!isNgo ? (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="w-full px-4 py-2.5 text-left text-sm text-text-muted hover:bg-surface-hover"
+                            onClick={() => {
+                              setProfileOpen(false);
+                              navigate('/ngo/apply');
+                            }}
+                          >
+                            {t('profile.menuNgoRequest')}
+                          </button>
+                        ) : null}
                       </>
                     ) : null}
                     <div className="my-1 h-px bg-border-card" />

@@ -4,6 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 
+jest.mock('@/features/pets/petsApi', () => ({
+  listPets: async () => ({ items: [], total: 0, page: 1, pageSize: 8 }),
+}));
+
 function renderWithProviders(ui: ReactElement, initial = '/') {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -18,13 +22,9 @@ function renderWithProviders(ui: ReactElement, initial = '/') {
 }
 
 describe('App', () => {
-  it('renders home heading in Mongolian', async () => {
+  it('redirects / to /pets', async () => {
     renderWithProviders(<App />, '/');
-    expect(
-      await screen.findByRole('heading', {
-        name: /Тэжээвэр амьтан үрчлүүлэх болон\s*хандив цуглуулах нэгдсэн платформ/i,
-      }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^Амьтны зар$/i })).toBeInTheDocument();
   });
 
   it('renders login title on /login', async () => {

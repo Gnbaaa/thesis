@@ -73,3 +73,15 @@ export function getAuthRole(): string | null {
     return null;
   }
 }
+
+export function getAuthUserId(): string | null {
+  try {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return null;
+    const payload = decodeJwtPayload(token);
+    const sub = payload?.sub;
+    return typeof sub === 'string' && sub.length > 0 ? sub : null;
+  } catch {
+    return null;
+  }
+}
