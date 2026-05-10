@@ -27,3 +27,14 @@ export async function uploadAvatar(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function publicProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new UnauthorizedError();
+    const p = (req as Request & { validatedParams?: unknown }).validatedParams as { id: string };
+    const profile = await service.getPublicProfileById(p.id);
+    res.json(profile);
+  } catch (err) {
+    next(err);
+  }
+}
+

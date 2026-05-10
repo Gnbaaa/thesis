@@ -213,7 +213,11 @@ export default function PetDetailPage() {
                 >
                   {t('pets.detail.sendRequest')}
                 </Link>
-                <button type="button" className={cn(btnSecondary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}>
+                <button
+                  type="button"
+                  className={cn(btnSecondary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}
+                  onClick={() => navigate(`/chat?to=${encodeURIComponent(data.owner.id)}`)}
+                >
                   {t('pets.detail.startChat')}
                 </button>
               </div>

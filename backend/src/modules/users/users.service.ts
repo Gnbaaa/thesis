@@ -1,6 +1,6 @@
 import * as repo from './users.repository';
 import { NotFoundError } from '../../shared/errors';
-import type { UserProfile } from './users.types';
+import type { UserProfile, UserPublicProfile } from './users.types';
 import { uploadImage } from '../../shared/storage';
 
 export async function getMe(userId: string): Promise<UserProfile> {
@@ -13,5 +13,16 @@ export async function uploadMyAvatar(params: { userId: string; buffer: Buffer })
   const uploaded = await uploadImage({ buffer: params.buffer, folder: 'avatars' });
   await repo.setAvatarPublicId({ userId: params.userId, avatarPublicId: uploaded.publicId });
   return getMe(params.userId);
+}
+
+export async function getPublicProfilesByIds(userIds: string[]): Promise<UserPublicProfile[]> {
+  return repo.findPublicByIds(userIds);
+}
+
+export async function getPublicProfileById(userId: string): Promise<UserPublicProfile> {
+  const rows = await repo.findPublicByIds([userId]);
+  const user = rows[0];
+  if (!user) throw new NotFoundError('Хэрэглэгч олдсонгүй', 'USER_NOT_FOUND');
+  return user;
 }
 

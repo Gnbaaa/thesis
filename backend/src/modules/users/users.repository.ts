@@ -1,5 +1,5 @@
 import { getPool } from '../../infra/db/pool';
-import type { UserProfile } from './users.types';
+import type { UserProfile, UserPublicProfile } from './users.types';
 import { getImageUrl } from '../../shared/storage';
 
 type UserRow = {
@@ -29,6 +29,11 @@ function mapRow(row: UserRow): UserProfile {
   };
 }
 
+function displayName(row: Pick<UserRow, 'first_name' | 'last_name' | 'email'>): string {
+  const full = `${row.first_name ?? ''} ${row.last_name ?? ''}`.trim();
+  return full || row.email;
+}
+
 export async function findMe(userId: string): Promise<UserProfile | null> {
   const { rows } = await getPool().query<UserRow>(
     `SELECT id, email, role, first_name, last_name, phone, avatar_url, avatar_public_id
@@ -39,6 +44,22 @@ export async function findMe(userId: string): Promise<UserProfile | null> {
   );
   const row = rows[0];
   return row ? mapRow(row) : null;
+}
+
+export async function findPublicByIds(userIds: string[]): Promise<UserPublicProfile[]> {
+  if (!userIds.length) return [];
+  const { rows } = await getPool().query<UserRow>(
+    `SELECT id, email, role, first_name, last_name, phone, avatar_url, avatar_public_id
+     FROM users
+     WHERE id = ANY($1::uuid[])`,
+    [userIds],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    displayName: displayName(row),
+    avatarUrl: row.avatar_public_id ? getImageUrl(row.avatar_public_id, { width: 128 }) : (row.avatar_url ?? null),
+    role: row.role,
+  }));
 }
 
 export async function setAvatarPublicId(params: { userId: string; avatarPublicId: string }): Promise<void> {

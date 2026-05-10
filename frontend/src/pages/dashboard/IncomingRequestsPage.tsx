@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -57,15 +57,12 @@ export default function IncomingRequestsPage() {
     queryFn: () => getIncomingRequests({ limit: 20 }),
   });
 
-  useEffect(() => {
-    const first = inboxQuery.data?.items?.[0]?.id;
-    if (!selectedId && first) setSelectedId(first);
-  }, [inboxQuery.data?.items, selectedId]);
+  const activeId = selectedId ?? inboxQuery.data?.items?.[0]?.id ?? null;
 
   const detailQuery = useQuery({
-    queryKey: ['dashboard', 'incomingDetail', selectedId],
-    queryFn: () => getIncomingRequestDetail(selectedId!),
-    enabled: Boolean(selectedId),
+    queryKey: ['dashboard', 'incomingDetail', activeId],
+    queryFn: () => getIncomingRequestDetail(activeId!),
+    enabled: Boolean(activeId),
   });
 
   const resolveMutation = useMutation({

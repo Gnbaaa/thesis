@@ -95,8 +95,6 @@ export default function PetsEditPage() {
 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
-  const [existingPhotoPublicId, setExistingPhotoPublicId] = useState<string | null>(null);
 
   const previewUrl = useMemo(() => {
     if (!file || !file.type.startsWith('image/')) return null;
@@ -138,9 +136,6 @@ export default function PetsEditPage() {
   useEffect(() => {
     if (!petQuery.data) return;
     reset(mapDetailToForm(petQuery.data));
-    setExistingPhotoUrl(petQuery.data.photoUrl ?? null);
-    // photoPublicId is not exposed by API; keep as null unless new file uploaded
-    setExistingPhotoPublicId(null);
   }, [petQuery.data, reset]);
 
   const setSelectedFile = (f: File | null) => {
@@ -168,7 +163,7 @@ export default function PetsEditPage() {
 
   const mutation = useMutation({
     mutationFn: async (p: { values: FormValues }) => {
-      let photoId: string | null = existingPhotoPublicId;
+      let photoId: string | null = null;
       if (file) {
         const up = await uploadPetImage(file);
         photoId = up.publicId;
@@ -317,8 +312,8 @@ export default function PetsEditPage() {
             </div>
             {previewUrl ? (
               <img src={previewUrl} alt="" className="mt-1 max-h-32 rounded-lg object-contain" />
-            ) : existingPhotoUrl ? (
-              <img src={existingPhotoUrl} alt="" className="mt-1 max-h-32 rounded-lg object-contain" />
+            ) : petQuery.data.photoUrl ? (
+              <img src={petQuery.data.photoUrl} alt="" className="mt-1 max-h-32 rounded-lg object-contain" />
             ) : null}
             <p className="text-sm font-medium text-text-secondary">{t('pets.create.photoDrop')}</p>
             <p className="text-xs text-text-muted">{t('pets.create.photoTypes')}</p>

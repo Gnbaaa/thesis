@@ -45,6 +45,13 @@ export default function LoginPage() {
     navigate('/login', { replace: true });
   }, [searchParams, setError, t, navigate]);
 
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'session_expired' || reason === 'session_invalid') {
+      setError('root', { message: t('auth.errors.sessionEnded') });
+    }
+  }, [searchParams, setError, t]);
+
   const mutation = useMutation({
     mutationFn: loginRequest,
     onSuccess: (data) => {

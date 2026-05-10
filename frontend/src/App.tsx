@@ -21,6 +21,8 @@ const UserDashboardPage = lazy(() => import('@/pages/dashboard/UserDashboardPage
 const IncomingRequestsPage = lazy(() => import('@/pages/dashboard/IncomingRequestsPage'));
 const ComingSoonPage = lazy(() => import('@/pages/ComingSoonPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
+const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 
 function AppLayout() {
   const { t } = useTranslation();
@@ -80,8 +82,8 @@ export default function App() {
         <Route path="dashboard/inbox" element={<IncomingRequestsPage />} />
         <Route path="donations" element={<ComingSoonPage />} />
         <Route path="volunteer" element={<ComingSoonPage />} />
-        <Route path="chat" element={<ComingSoonPage />} />
-        <Route path="notifications" element={<ComingSoonPage />} />
+        <Route path="chat" element={<ChatPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
     </Routes>
   );

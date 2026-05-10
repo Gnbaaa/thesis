@@ -11,8 +11,20 @@ export type UserProfile = {
   status: 'active';
 };
 
+export type UserPublicProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: string;
+};
+
 export async function getMyProfile(): Promise<UserProfile> {
   const { data } = await api.get<UserProfile>('/api/v1/users/me');
+  return data;
+}
+
+export async function getUserPublicProfile(id: string): Promise<UserPublicProfile> {
+  const { data } = await api.get<UserPublicProfile>(`/api/v1/users/public/${encodeURIComponent(id)}`);
   return data;
 }
 

@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Menu, MessageCircle, PawPrint, User, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
 import { clearAuthSession, getAuthPictureUrl, getAuthRole, useIsLoggedIn } from '@/lib/authSession';
+import { getUnreadNotificationCountWhere } from '@/features/notifications/notificationsApi';
+import { getChatSocket } from '@/features/chat/chatSocket';
 
 const iconStroke = 1.75;
 
@@ -18,7 +21,9 @@ function navCircleClassName(isActive?: boolean) {
 export function AppNavbar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const loggedIn = useIsLoggedIn();
+  const qc = useQueryClient();
   const role = loggedIn ? getAuthRole() : null;
   const isAdmin = role === 'admin';
   const isNgo = role === 'ngo';
@@ -30,6 +35,41 @@ export function AppNavbar() {
   const [avatarFailedUrl, setAvatarFailedUrl] = useState<string | null>(null);
   const showProfilePhoto =
     Boolean(profileImageUrl) && avatarFailedUrl !== profileImageUrl;
+
+  const unreadNotificationsQuery = useQuery({
+    queryKey: ['notifications', 'unreadCount', { excludeType: 'chat_message' }],
+    queryFn: () => getUnreadNotificationCountWhere({ excludeType: 'chat_message' }),
+    enabled: loggedIn,
+    refetchInterval: 15_000,
+  });
+  const unreadNotifications = unreadNotificationsQuery.data?.count ?? 0;
+  const unreadNotificationsLabel = unreadNotifications > 99 ? '99+' : String(unreadNotifications);
+
+  const unreadChatQuery = useQuery({
+    queryKey: ['notifications', 'unreadCount', { type: 'chat_message' }],
+    queryFn: () => getUnreadNotificationCountWhere({ type: 'chat_message' }),
+    enabled: loggedIn,
+    refetchInterval: 10_000,
+  });
+  const unreadChat = unreadChatQuery.data?.count ?? 0;
+  const unreadChatEffective = pathname.startsWith('/chat') ? 0 : unreadChat;
+  const unreadChatLabel = unreadChatEffective > 99 ? '99+' : String(unreadChatEffective);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    const s = getChatSocket();
+    s.auth = { token: localStorage.getItem('accessToken') ?? '' };
+    if (!s.connected) s.connect();
+
+    const onNew = () => {
+      // Refresh both badges without page refresh.
+      qc.invalidateQueries({ queryKey: ['notifications', 'unreadCount'] }).catch(() => {});
+    };
+    s.on('chat:message:new', onNew);
+    return () => {
+      s.off('chat:message:new', onNew);
+    };
+  }, [loggedIn, qc]);
 
   useEffect(() => {
     if (!profileOpen && !mobileMenuOpen) return;
@@ -278,7 +318,14 @@ export function AppNavbar() {
                 aria-label={t('auth.nav.chat')}
                 title={t('auth.nav.chat')}
               >
-                <MessageCircle className="size-[18px]" strokeWidth={iconStroke} aria-hidden />
+                <span className="relative">
+                  <MessageCircle className="size-[18px]" strokeWidth={iconStroke} aria-hidden />
+                  {unreadChatEffective > 0 ? (
+                    <span className="absolute -right-2.5 -top-2 grid min-w-[18px] place-items-center rounded-full bg-primary px-1 py-0.5 text-[10px] font-semibold leading-none text-on-primary">
+                      {unreadChatLabel}
+                    </span>
+                  ) : null}
+                </span>
               </NavLink>
               <NavLink
                 to="/notifications"
@@ -286,7 +333,14 @@ export function AppNavbar() {
                 aria-label={t('auth.nav.notifications')}
                 title={t('auth.nav.notifications')}
               >
-                <Bell className="size-[18px]" strokeWidth={iconStroke} aria-hidden />
+                <span className="relative">
+                  <Bell className="size-[18px]" strokeWidth={iconStroke} aria-hidden />
+                  {unreadNotifications > 0 ? (
+                    <span className="absolute -right-2.5 -top-2 grid min-w-[18px] place-items-center rounded-full bg-primary px-1 py-0.5 text-[10px] font-semibold leading-none text-on-primary">
+                      {unreadNotificationsLabel}
+                    </span>
+                  ) : null}
+                </span>
               </NavLink>
               <div className="relative" ref={profileWrapRef}>
                 <button

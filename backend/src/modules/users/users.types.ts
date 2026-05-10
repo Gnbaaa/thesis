@@ -9,3 +9,10 @@ export type UserProfile = {
   status: 'active';
 };
 
+export type UserPublicProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: string;
+};
+

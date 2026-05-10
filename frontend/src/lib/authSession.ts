@@ -1,6 +1,72 @@
 import { useLayoutEffect, useState } from 'react';
+import { getChatSocket } from '@/features/chat/chatSocket';
 
-const AUTH_EVENT = 'pet-platform-auth';
+/** Навбар, чат зэрэг session өөрчлөгдсөнийг ажиглахад ашиглана. */
+export const PET_PLATFORM_AUTH_EVENT = 'pet-platform-auth';
+
+const LOGIN_FREE_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback'];
+
+let sessionExpiryTimerId: number | null = null;
+
+function clearSessionExpiryTimer(): void {
+  if (typeof window === 'undefined') return;
+  if (sessionExpiryTimerId !== null) {
+    window.clearTimeout(sessionExpiryTimerId);
+    sessionExpiryTimerId = null;
+  }
+}
+
+function getJwtExpiryMs(token: string | null): number | null {
+  if (!token) return null;
+  const payload = decodeJwtPayload(token);
+  const exp = payload?.exp;
+  return typeof exp === 'number' ? exp * 1000 : null;
+}
+
+/** Refresh token-ийн дуусах цагт session цэвэрлэх (нэг таб). */
+export function scheduleRefreshTokenExpiryLogout(): void {
+  clearSessionExpiryTimer();
+  if (typeof window === 'undefined') return;
+  try {
+    const rt = localStorage.getItem('refreshToken');
+    if (!rt) return;
+    const expMs = getJwtExpiryMs(rt);
+    if (expMs == null) return;
+    const delay = expMs - Date.now();
+    if (delay <= 0) {
+      clearAuthSession();
+      redirectToLoginIfSessionEnded('session_expired');
+      return;
+    }
+    sessionExpiryTimerId = window.setTimeout(() => {
+      sessionExpiryTimerId = null;
+      clearAuthSession();
+      redirectToLoginIfSessionEnded('session_expired');
+    }, delay);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function redirectToLoginIfSessionEnded(reason: 'session_expired' | 'session_invalid'): void {
+  if (typeof window === 'undefined') return;
+  const path = window.location.pathname;
+  if (LOGIN_FREE_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) {
+    return;
+  }
+  window.location.assign(`/login?reason=${reason}`);
+}
+
+let authListenersInstalled = false;
+
+export function initAuthSessionListeners(): void {
+  if (typeof window === 'undefined' || authListenersInstalled) return;
+  authListenersInstalled = true;
+  scheduleRefreshTokenExpiryLogout();
+  window.addEventListener('storage', () => {
+    scheduleRefreshTokenExpiryLogout();
+  });
+}
 
 function readHasAccessToken(): boolean {
   try {
@@ -15,10 +81,10 @@ export function useIsLoggedIn(): boolean {
 
   useLayoutEffect(() => {
     const onChange = () => setLoggedIn(readHasAccessToken());
-    window.addEventListener(AUTH_EVENT, onChange);
+    window.addEventListener(PET_PLATFORM_AUTH_EVENT, onChange);
     window.addEventListener('storage', onChange);
     return () => {
-      window.removeEventListener(AUTH_EVENT, onChange);
+      window.removeEventListener(PET_PLATFORM_AUTH_EVENT, onChange);
       window.removeEventListener('storage', onChange);
     };
   }, []);
@@ -28,10 +94,17 @@ export function useIsLoggedIn(): boolean {
 
 /** Нэг таб доторх нэвтрэлт/гарахын дараа навбар зэргийг шинэчлэнэ. */
 export function notifyAuthSessionChanged(): void {
-  window.dispatchEvent(new Event(AUTH_EVENT));
+  window.dispatchEvent(new Event(PET_PLATFORM_AUTH_EVENT));
+  scheduleRefreshTokenExpiryLogout();
 }
 
 export function clearAuthSession(): void {
+  clearSessionExpiryTimer();
+  try {
+    getChatSocket().disconnect();
+  } catch {
+    /* ignore */
+  }
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   notifyAuthSessionChanged();
