@@ -15,6 +15,7 @@ import { petsRouter } from './modules/pets/pets.routes';
 import { adoptionRouter } from './modules/adoption/adoption.routes';
 import { chatRouter } from './modules/chat/chat.routes';
 import { notificationsRouter } from './modules/notifications/notifications.routes';
+import { volunteerRouter } from './modules/volunteer/volunteer.routes';
 import { errorMiddleware } from './shared/error-middleware';
 import { connectMongo } from './infra/mongo/connection';
 import { attachSocket } from './realtime/socket';
@@ -51,6 +52,7 @@ app.use('/api/v1/pets', petsRouter);
 app.use('/api/v1/adoption', adoptionRouter);
 app.use('/api/v1/chat', chatRouter);
 app.use('/api/v1/notifications', notificationsRouter);
+app.use('/api/v1/volunteer', volunteerRouter);
 
 app.use(errorMiddleware);
 

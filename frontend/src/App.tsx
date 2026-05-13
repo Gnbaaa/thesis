@@ -23,22 +23,25 @@ const ComingSoonPage = lazy(() => import('@/pages/ComingSoonPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
+const VolunteerListPage = lazy(() => import('@/pages/volunteer/VolunteerListPage'));
+const VolunteerAddPage = lazy(() => import('@/pages/volunteer/VolunteerAddPage'));
+const VolunteerDetailPage = lazy(() => import('@/pages/volunteer/VolunteerDetailPage'));
 
 function AppLayout() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const petsListPage = pathname === '/pets';
+  const darkListPage = pathname === '/pets' || pathname === '/volunteer';
 
   return (
     <>
       <AppNavbar />
       <div
-        className={cn('min-h-[calc(100vh-4rem)]', petsListPage ? 'bg-black' : 'bg-surface-muted')}
+        className={cn('min-h-[calc(100vh-4rem)]', darkListPage ? 'bg-black' : 'bg-surface-muted')}
       >
         <div
           className={cn(
             'mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1440px] justify-center',
-            petsListPage
+            darkListPage
               ? 'px-4 py-4 sm:px-5 sm:py-5 md:px-6 lg:px-8'
               : 'px-4 py-8 sm:px-6 md:py-12 lg:px-20',
           )}
@@ -81,7 +84,9 @@ export default function App() {
         <Route path="dashboard" element={<UserDashboardPage />} />
         <Route path="dashboard/inbox" element={<IncomingRequestsPage />} />
         <Route path="donations" element={<ComingSoonPage />} />
-        <Route path="volunteer" element={<ComingSoonPage />} />
+        <Route path="volunteer" element={<VolunteerListPage />} />
+        <Route path="volunteer/new" element={<VolunteerAddPage />} />
+        <Route path="volunteer/:id" element={<VolunteerDetailPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
       </Route>
