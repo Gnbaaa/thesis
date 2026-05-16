@@ -48,7 +48,9 @@ export function scheduleRefreshTokenExpiryLogout(): void {
   }
 }
 
-export function redirectToLoginIfSessionEnded(reason: 'session_expired' | 'session_invalid'): void {
+export function redirectToLoginIfSessionEnded(
+  reason: 'session_expired' | 'session_invalid' | 'account_suspended' | 'account_closed',
+): void {
   if (typeof window === 'undefined') return;
   const path = window.location.pathname;
   if (LOGIN_FREE_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) {

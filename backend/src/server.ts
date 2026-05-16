@@ -16,6 +16,8 @@ import { adoptionRouter } from './modules/adoption/adoption.routes';
 import { chatRouter } from './modules/chat/chat.routes';
 import { notificationsRouter } from './modules/notifications/notifications.routes';
 import { volunteerRouter } from './modules/volunteer/volunteer.routes';
+import { donationsRouter } from './modules/donations/donations.routes';
+import { webhook as donationsWebhook } from './modules/donations/donations.controller';
 import { errorMiddleware } from './shared/error-middleware';
 import { connectMongo } from './infra/mongo/connection';
 import { attachSocket } from './realtime/socket';
@@ -36,6 +38,17 @@ function corsOrigins(): string[] {
 
 app.use(helmet());
 app.use(cors({ origin: corsOrigins(), credentials: true }));
+
+// Stripe webhook нь raw body шаардлагатай учир express.json-ийн ӨМНӨ мountлогдоно.
+// Signature шалгалт `payment.adapter.verifyWebhook` дотор хийгдэнэ (NFR-S, FR-9).
+app.post(
+  '/api/v1/donations/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res, next) => {
+    Promise.resolve(donationsWebhook(req, res)).catch(next);
+  },
+);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(pinoHttp({ logger }));
 app.use(passport.initialize());
@@ -53,6 +66,7 @@ app.use('/api/v1/adoption', adoptionRouter);
 app.use('/api/v1/chat', chatRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/volunteer', volunteerRouter);
+app.use('/api/v1/donations', donationsRouter);
 
 app.use(errorMiddleware);
 

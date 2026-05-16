@@ -1,11 +1,21 @@
 import { createPetBody, updatePetBody } from './pets.schema';
 import type { z } from 'zod';
-import type { PetListQuery } from './pets.types';
+import type { OwnerPetActivityReport, PetListQuery } from './pets.types';
 import { ForbiddenError, NotFoundError } from '../../shared/errors';
 import * as repo from './pets.repository';
 
 export async function listPets(query: PetListQuery) {
   return await repo.listPets(query);
+}
+
+/**
+ * UC-014: Үйл ажиллагааны тайлан → Амьтны зар таб.
+ * Эзэмшигчийн оруулсан амьтдын статистикийг буцаана.
+ */
+export async function getOwnerActivityReport(
+  ownerId: string,
+): Promise<OwnerPetActivityReport> {
+  return await repo.getOwnerPetActivityReport(ownerId, { recentLimit: 20 });
 }
 
 type CreateBody = z.infer<typeof createPetBody>;

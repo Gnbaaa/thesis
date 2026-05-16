@@ -1,5 +1,7 @@
 import { ConflictError, ForbiddenError, NotFoundError } from '../../shared/errors';
 import { getPool } from '../../infra/db/pool';
+import * as notificationsService from '../notifications/notifications.service';
+import * as usersService from '../users/users.service';
 import type { AdoptionInboxResponse, CreateAdoptionRequestInput, MyAdoptionResponse } from './adoption.types';
 import * as repo from './adoption.repository';
 
@@ -9,8 +11,8 @@ export async function createRequest(input: CreateAdoptionRequestInput) {
   try {
     await client.query('BEGIN');
 
-    const petRes = await client.query<{ owner_id: string; status: string }>(
-      `SELECT owner_id, status FROM pets WHERE id = $1 LIMIT 1 FOR UPDATE`,
+    const petRes = await client.query<{ owner_id: string; status: string; name: string }>(
+      `SELECT owner_id, status, name FROM pets WHERE id = $1 LIMIT 1 FOR UPDATE`,
       [input.petId],
     );
     const pet = petRes.rows[0];
@@ -63,6 +65,18 @@ export async function createRequest(input: CreateAdoptionRequestInput) {
     }
 
     await client.query('COMMIT');
+
+    const requester = await usersService.getPublicProfileById(input.requesterId);
+    await notificationsService.notifySafe({
+      userId: pet.owner_id,
+      type: 'adoption_request_sent',
+      title: 'Шинэ үрчлэлтийн хүсэлт',
+      body: `${requester.displayName} «${pet.name}» амьтанд үрчлэлтийн хүсэлт илгээлээ.`,
+      actionLabel: 'Харах',
+      actionUrl: '/dashboard/inbox',
+      sourceId: `adoption_request:${createdId}`,
+    });
+
     return { id: createdId };
   } catch (err) {
     try {
@@ -106,9 +120,15 @@ export async function resolveRequest(params: { requestId: string; ownerId: strin
   try {
     await client.query('BEGIN');
 
-    const rRes = await client.query<{ id: string; pet_id: string; status: string }>(
+    const rRes = await client.query<{
+      id: string;
+      pet_id: string;
+      status: string;
+      requester_id: string;
+      pet_name: string;
+    }>(
       `
-      SELECT ar.id, ar.pet_id, ar.status
+      SELECT ar.id, ar.pet_id, ar.status, ar.requester_id, p.name AS pet_name
       FROM adoption_requests ar
       JOIN pets p ON p.id = ar.pet_id
       WHERE ar.id = $1
@@ -132,6 +152,15 @@ export async function resolveRequest(params: { requestId: string; ownerId: strin
         [params.requestId],
       );
       await client.query('COMMIT');
+      await notificationsService.notifySafe({
+        userId: row.requester_id,
+        type: 'adoption_request_rejected',
+        title: 'Үрчлэлтийн хүсэлт татгалзлаа',
+        body: `«${row.pet_name}» амьтны үрчлэлтийн хүсэлт татгалзагдлаа.`,
+        actionLabel: 'Дэлгэрэнгүй',
+        actionUrl: `/pets/${row.pet_id}`,
+        sourceId: `adoption_request:${params.requestId}:rejected`,
+      });
       return { ok: true as const };
     }
 
@@ -152,6 +181,15 @@ export async function resolveRequest(params: { requestId: string; ownerId: strin
     );
 
     await client.query('COMMIT');
+    await notificationsService.notifySafe({
+      userId: row.requester_id,
+      type: 'adoption_request_approved',
+      title: 'Үрчлэлтийн хүсэлт зөвшөөрөгдлөө',
+      body: `«${row.pet_name}» амьтны үрчлэлтийн хүсэлт зөвшөөрөгдлөө.`,
+      actionLabel: 'Дэлгэрэнгүй',
+      actionUrl: `/pets/${row.pet_id}`,
+      sourceId: `adoption_request:${params.requestId}:approved`,
+    });
     return { ok: true as const };
   } catch (err) {
     try {

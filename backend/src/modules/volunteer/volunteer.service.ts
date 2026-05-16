@@ -1,8 +1,13 @@
 import type { z } from 'zod';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../shared/errors';
+import * as notificationsService from '../notifications/notifications.service';
+import * as usersService from '../users/users.service';
 import * as repo from './volunteer.repository';
 import type { createVolunteerPostBody, updateVolunteerPostBody } from './volunteer.schema';
-import type { VolunteerPostListQuery } from './volunteer.types';
+import type {
+  OwnerVolunteerActivityReport,
+  VolunteerPostListQuery,
+} from './volunteer.types';
 
 type CreateBody = z.infer<typeof createVolunteerPostBody>;
 type UpdateBody = z.infer<typeof updateVolunteerPostBody>;
@@ -14,6 +19,15 @@ function normalisePhoto(value: string | null | undefined): string | null {
 
 export async function listVolunteerPosts(query: VolunteerPostListQuery) {
   return await repo.listVolunteerPosts(query);
+}
+
+/**
+ * UC-014: Үйл ажиллагааны тайлан → Сайн дурын ажил таб.
+ */
+export async function getOwnerActivityReport(
+  ownerId: string,
+): Promise<OwnerVolunteerActivityReport> {
+  return await repo.getOwnerVolunteerActivityReport(ownerId, { recentLimit: 20 });
 }
 
 export async function getVolunteerPostById(id: string, viewerId: string | null = null) {
@@ -42,7 +56,18 @@ export async function registerForVolunteerPost(params: { postId: string; userId:
     return await repo.findVolunteerPostById(params.postId, params.userId);
   }
   await repo.createVolunteerRegistration(params.postId, params.userId);
-  return await repo.findVolunteerPostById(params.postId, params.userId);
+  const updated = await repo.findVolunteerPostById(params.postId, params.userId);
+  const registrant = await usersService.getPublicProfileById(params.userId);
+  await notificationsService.notifySafe({
+    userId: post.owner.id,
+    type: 'volunteer_registration',
+    title: 'Сайн дурын бүртгэл',
+    body: `${registrant.displayName} таны «${post.title}» зарт бүртгүүллээ.`,
+    actionLabel: 'Харах',
+    actionUrl: `/volunteer/${params.postId}`,
+    sourceId: `volunteer_reg:${params.postId}:${params.userId}`,
+  });
+  return updated;
 }
 
 export async function unregisterFromVolunteerPost(params: { postId: string; userId: string }) {

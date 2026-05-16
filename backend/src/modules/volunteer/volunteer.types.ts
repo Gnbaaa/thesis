@@ -37,6 +37,26 @@ export type VolunteerPostListQuery = {
   pageSize: number;
 };
 
+export type OwnerVolunteerActivityItem = {
+  id: string;
+  title: string;
+  location: string;
+  eventDate: string;
+  requiredCount: number;
+  registeredCount: number;
+  status: VolunteerPostStatus;
+  createdAt: string;
+};
+
+export type OwnerVolunteerActivityReport = {
+  totalPosts: number;
+  /** Идэвхтэй зарын тоо. */
+  activeCount: number;
+  /** Бүх бүртгэлийн (registrations) нийт тоо. */
+  totalRegistrations: number;
+  recent: OwnerVolunteerActivityItem[];
+};
+
 export type CreateVolunteerPostInput = {
   ownerId: string;
   title: string;

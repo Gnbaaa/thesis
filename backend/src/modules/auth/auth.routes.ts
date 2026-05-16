@@ -5,6 +5,8 @@ import { getDotenvDiagnostics } from '../../loadEnv';
 import { ensureGoogleOAuthReady } from './oauth.adapter';
 import { issueTokenPair } from './auth.jwt';
 import type { AuthUser } from './auth.types';
+import { assertUserMayAuthenticate } from './userStatus';
+import { AppError } from '../../shared/errors';
 import * as ctrl from './auth.controller';
 import * as schemas from './auth.schema';
 import { validateBody } from '../../shared/validate';
@@ -43,7 +45,7 @@ router.get('/google', (req: Request, res: Response, next: NextFunction) => {
         googleIdLen: process.env.GOOGLE_OAUTH_CLIENT_ID?.length ?? 0,
         secretLen: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.length ?? 0,
         hasCallback: Boolean(process.env.GOOGLE_OAUTH_CALLBACK_URL?.trim()),
-        hint: 'Backend-ийг backend/ хавтсаас npm run dev асаана уу. Порт 4000 дээр өөр хуучин процесс байж болно: lsof -i :4000',
+        hint: 'Backend-ийг backend/ хавтсаас npm run dev асаана уу.',
       };
     }
     res.status(503).json(body);
@@ -67,6 +69,20 @@ router.get(
   (req: Request, res: Response) => {
     const user = req.user as AuthUser | undefined;
     if (!user) {
+      res.redirect(`${frontendBaseUrl()}/login?error=google`);
+      return;
+    }
+    try {
+      assertUserMayAuthenticate(user.status);
+    } catch (err) {
+      if (err instanceof AppError && err.code === 'USER_SUSPENDED') {
+        res.redirect(`${frontendBaseUrl()}/login?reason=account_suspended`);
+        return;
+      }
+      if (err instanceof AppError && err.code === 'USER_ACCOUNT_CLOSED') {
+        res.redirect(`${frontendBaseUrl()}/login?reason=account_closed`);
+        return;
+      }
       res.redirect(`${frontendBaseUrl()}/login?error=google`);
       return;
     }

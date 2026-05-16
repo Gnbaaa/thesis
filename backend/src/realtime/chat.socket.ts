@@ -109,10 +109,9 @@ export function registerChatSocket(io: Server<ClientToServerEvents, ServerToClie
         await usersService.getPublicProfileById(recipientId);
         const msg = await chatService.sendMessage({ senderId: userId, recipientId, text });
 
-        // Notification is best-effort; chat sending must not fail if notifications are unavailable.
         try {
           const senderProfile = await usersService.getPublicProfileById(userId);
-          await notificationsService.notify({
+          await notificationsService.notifySafe({
             userId: recipientId,
             type: 'chat_message',
             title: 'Шинэ чат ирсэн',

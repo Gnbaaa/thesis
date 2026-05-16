@@ -1,17 +1,23 @@
 import { getPool } from '../../infra/db/pool';
-import type { UserProfile, UserPublicProfile } from './users.types';
+import type { UserProfile, UserProfileStatus, UserPublicProfile } from './users.types';
 import { getImageUrl } from '../../shared/storage';
 
 type UserRow = {
   id: string;
   email: string;
   role: string;
+  status?: string;
   first_name: string;
   last_name: string;
   phone: string | null;
   avatar_url: string | null;
   avatar_public_id: string | null;
 };
+
+function normaliseStatus(raw: string | null | undefined): UserProfileStatus {
+  if (raw === 'suspended' || raw === 'closed') return raw;
+  return 'active';
+}
 
 function mapRow(row: UserRow): UserProfile {
   const avatarUrl = row.avatar_public_id
@@ -25,7 +31,7 @@ function mapRow(row: UserRow): UserProfile {
     lastName: row.last_name ?? '',
     phone: row.phone ?? null,
     avatarUrl,
-    status: 'active',
+    status: normaliseStatus(row.status),
   };
 }
 
@@ -36,7 +42,7 @@ function displayName(row: Pick<UserRow, 'first_name' | 'last_name' | 'email'>): 
 
 export async function findMe(userId: string): Promise<UserProfile | null> {
   const { rows } = await getPool().query<UserRow>(
-    `SELECT id, email, role, first_name, last_name, phone, avatar_url, avatar_public_id
+    `SELECT id, email, role, status, first_name, last_name, phone, avatar_url, avatar_public_id
      FROM users
      WHERE id = $1
      LIMIT 1`,

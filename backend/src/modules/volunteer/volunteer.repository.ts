@@ -2,6 +2,8 @@ import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
 import type {
   CreateVolunteerPostInput,
+  OwnerVolunteerActivityItem,
+  OwnerVolunteerActivityReport,
   UpdateVolunteerPostInput,
   VolunteerPostDetail,
   VolunteerPostListItem,
@@ -221,6 +223,88 @@ export async function findVolunteerPostOwnerId(id: string): Promise<string | nul
     [id],
   );
   return rows[0]?.owner_id ?? null;
+}
+
+/**
+ * Эзэмшигчийн оруулсан сайн дурын зарын идэвхийн тайлан.
+ * Нийт зар, идэвхтэй зар, нийт бүртгэлийн тоо + сүүлийн N зар.
+ */
+export async function getOwnerVolunteerActivityReport(
+  ownerId: string,
+  options?: { recentLimit?: number },
+): Promise<OwnerVolunteerActivityReport> {
+  const pool = getPool();
+  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 100);
+
+  const statsRes = await pool.query<{
+    total_posts: string;
+    active_count: string;
+    total_registrations: string;
+  }>(
+    `
+    SELECT
+      COUNT(*)::text AS total_posts,
+      COUNT(*) FILTER (WHERE status = 'active')::text AS active_count,
+      COALESCE((
+        SELECT COUNT(*)::text
+        FROM volunteer_registrations r
+        INNER JOIN volunteer_posts p2 ON p2.id = r.post_id
+        WHERE p2.owner_id = $1
+      ), '0') AS total_registrations
+    FROM volunteer_posts
+    WHERE owner_id = $1
+    `,
+    [ownerId],
+  );
+  const s = statsRes.rows[0] ?? { total_posts: '0', active_count: '0', total_registrations: '0' };
+
+  const recentRes = await pool.query<{
+    id: string;
+    title: string;
+    location: string;
+    event_date: string;
+    required_count: number;
+    status: string;
+    created_at: string;
+    registered_count: string;
+  }>(
+    `
+    SELECT
+      p.id,
+      p.title,
+      p.location,
+      p.event_date::text AS event_date,
+      p.required_count,
+      p.status,
+      p.created_at,
+      COALESCE((
+        SELECT COUNT(*)::text FROM volunteer_registrations r WHERE r.post_id = p.id
+      ), '0') AS registered_count
+    FROM volunteer_posts p
+    WHERE p.owner_id = $1
+    ORDER BY p.created_at DESC
+    LIMIT $2
+    `,
+    [ownerId, limit],
+  );
+
+  const recent: OwnerVolunteerActivityItem[] = recentRes.rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    location: r.location,
+    eventDate: r.event_date,
+    requiredCount: r.required_count,
+    registeredCount: Number(r.registered_count),
+    status: normaliseStatus(r.status),
+    createdAt: r.created_at,
+  }));
+
+  return {
+    totalPosts: Number(s.total_posts),
+    activeCount: Number(s.active_count),
+    totalRegistrations: Number(s.total_registrations),
+    recent,
+  };
 }
 
 export async function createVolunteerPost(input: CreateVolunteerPostInput): Promise<{ id: string }> {

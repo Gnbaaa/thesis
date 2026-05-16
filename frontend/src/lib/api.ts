@@ -60,6 +60,13 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshPromise;
 }
 
+function readApiErrorCode(error: AxiosError): string | undefined {
+  const data = error.response?.data;
+  if (!data || typeof data !== 'object' || !('error' in data)) return undefined;
+  const err = (data as { error?: { code?: unknown } }).error;
+  return typeof err?.code === 'string' ? err.code : undefined;
+}
+
 function shouldSkipRefreshRetry(config: InternalAxiosRequestConfig): boolean {
   const path = `${config.baseURL ?? ''}${config.url ?? ''}`;
   return (
@@ -76,6 +83,20 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
     const status = error.response?.status;
+
+    if (status === 403) {
+      const code = readApiErrorCode(error);
+      if (code === 'USER_SUSPENDED') {
+        clearAuthSession();
+        redirectToLoginIfSessionEnded('account_suspended');
+        return Promise.reject(error);
+      }
+      if (code === 'USER_ACCOUNT_CLOSED') {
+        clearAuthSession();
+        redirectToLoginIfSessionEnded('account_closed');
+        return Promise.reject(error);
+      }
+    }
 
     if (status !== 401 || !original || original._retry || shouldSkipRefreshRetry(original)) {
       return Promise.reject(error);

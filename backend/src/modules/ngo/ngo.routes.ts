@@ -8,6 +8,7 @@ import { createNgoApplicationBody } from './ngo.schema';
 import { listQuery, updateStatusBody } from './admin/admin.schema';
 import * as ctrl from './ngo.controller';
 import * as adminCtrl from './admin/admin.controller';
+import * as reportsCtrl from './reports/reports.controller';
 
 const router = Router();
 
@@ -30,6 +31,9 @@ router.post(
   validateBody(createNgoApplicationBody),
   ctrl.createApplication,
 );
+
+// UC-014: Үйл ажиллагааны тайлан.
+router.get('/reports', authRequired, reportsCtrl.getReports);
 
 router.get(
   '/admin/applications',

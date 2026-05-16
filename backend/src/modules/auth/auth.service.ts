@@ -1,5 +1,6 @@
 import type { AuthUser } from './auth.types';
 import * as repo from './auth.repository';
+import { assertUserMayAuthenticate } from './userStatus';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { ConflictError, UnauthorizedError } from '../../shared/errors';
@@ -15,32 +16,38 @@ export async function upsertGoogleUser(params: {
 }): Promise<AuthUser> {
   const byGoogle = await repo.findUserByGoogleId(params.googleId);
   if (byGoogle) {
-    return repo.updateGoogleUserProfile({
+    const user = await repo.updateGoogleUserProfile({
       userId: byGoogle.id,
       firstName: params.firstName,
       lastName: params.lastName,
       avatarUrl: params.avatarUrl,
     });
+    assertUserMayAuthenticate(user.status);
+    return user;
   }
 
   const byEmail = await repo.findUserByEmail(params.email);
   if (byEmail) {
-    return repo.linkGoogleToExistingUser({
+    const user = await repo.linkGoogleToExistingUser({
       userId: byEmail.id,
       googleId: params.googleId,
       firstName: params.firstName,
       lastName: params.lastName,
       avatarUrl: params.avatarUrl,
     });
+    assertUserMayAuthenticate(user.status);
+    return user;
   }
 
-  return repo.createUserFromGoogle({
+  const user = await repo.createUserFromGoogle({
     googleId: params.googleId,
     email: params.email,
     firstName: params.firstName,
     lastName: params.lastName,
     avatarUrl: params.avatarUrl,
   });
+  assertUserMayAuthenticate(user.status);
+  return user;
 }
 
 export async function register(input: {
@@ -79,6 +86,7 @@ export async function login(
   if (!ok) {
     throw new UnauthorizedError('И-мэйл эсвэл нууц үг буруу байна', 'INVALID_CREDENTIALS');
   }
+  assertUserMayAuthenticate(row.user.status);
   const tokens = issueTokenPair(row.user);
   return { user: row.user, ...tokens };
 }
@@ -91,6 +99,7 @@ export async function refresh(
   if (!user) {
     throw new UnauthorizedError('Refresh token хүчингүй байна', 'INVALID_REFRESH_TOKEN');
   }
+  assertUserMayAuthenticate(user.status);
   const tokens = issueTokenPair(user);
   return { user, ...tokens };
 }
@@ -119,8 +128,8 @@ export async function forgotPassword(
   await sendEmail({
     to: user.email,
     subject: 'Нууц үг сэргээх хүсэлт',
-    text: `Та нууц үг сэргээх хүсэлт илгээсэн байна.\n\nСэргээх холбоос: ${resetUrl}\n\nХугацаа: 15 минут`,
-    html: `<p>Та нууц үг сэргээх хүсэлт илгээсэн байна.</p><p><a href="${resetUrl}">Нууц үг сэргээх</a></p><p>Хугацаа: 15 минут</p>`,
+    text: `Танд нууц үг сэргээх холбоос илгээсэн байна.\n\nСэргээх холбоос: ${resetUrl}\n\nХугацаа: 15 минут`,
+    html: `<p>Танд нууц үг сэргээх холбоос илгээсэн байна.</p><p><a href="${resetUrl}">Нууц үг сэргээх</a></p><p>Хугацаа: 15 минут</p>`,
   });
 
   if (process.env.NODE_ENV === 'production') return { ok: true };

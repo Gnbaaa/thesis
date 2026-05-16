@@ -5,6 +5,8 @@ export type NotificationType =
   | 'chat_message'
   | 'donation_received'
   | 'donation_goal_reached'
+  | 'ngo_application_approved'
+  | 'ngo_application_rejected'
   | 'volunteer_registration';
 
 export type NotificationListItem = {

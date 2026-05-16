@@ -1,3 +1,4 @@
+import { logger } from '../../shared/logger';
 import * as repo from './notifications.repository';
 import type { NotificationListItem, NotificationType } from './notifications.types';
 
@@ -65,5 +66,22 @@ export async function notify(params: {
   sourceId?: string | null;
 }): Promise<void> {
   await repo.createNotification(params);
+}
+
+/** Best-effort notify — caller-ийн гол урсгал алдаагаар унахгүй. */
+export async function notifySafe(params: {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  actionLabel?: string | null;
+  actionUrl?: string | null;
+  sourceId?: string | null;
+}): Promise<void> {
+  try {
+    await notify(params);
+  } catch (err) {
+    logger.warn({ err, type: params.type, userId: params.userId }, 'notifications.notify_failed');
+  }
 }
 

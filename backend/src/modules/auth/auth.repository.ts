@@ -1,11 +1,13 @@
 import type { AuthUser } from './auth.types';
 import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
+import { normaliseUserStatus, type UserAccountStatus } from './userStatus';
 
 type UserRow = {
   id: string;
   email: string;
   role: string;
+  status?: string;
   password_hash?: string | null;
   avatar_url: string | null;
   avatar_public_id?: string | null;
@@ -20,12 +22,13 @@ function mapRow(row: UserRow): AuthUser {
     email: row.email,
     role: row.role,
     avatarUrl,
+    status: normaliseUserStatus(row.status),
   };
 }
 
 export async function findUserByGoogleId(googleId: string): Promise<AuthUser | null> {
   const { rows } = await getPool().query<UserRow>(
-    `SELECT id, email, role, avatar_url, avatar_public_id FROM users WHERE google_id = $1 LIMIT 1`,
+    `SELECT id, email, role, status, avatar_url, avatar_public_id FROM users WHERE google_id = $1 LIMIT 1`,
     [googleId],
   );
   return rows[0] ? mapRow(rows[0]) : null;
@@ -33,7 +36,7 @@ export async function findUserByGoogleId(googleId: string): Promise<AuthUser | n
 
 export async function findUserByEmail(email: string): Promise<AuthUser | null> {
   const { rows } = await getPool().query<UserRow>(
-    `SELECT id, email, role, avatar_url, avatar_public_id FROM users WHERE lower(email) = lower($1) LIMIT 1`,
+    `SELECT id, email, role, status, avatar_url, avatar_public_id FROM users WHERE lower(email) = lower($1) LIMIT 1`,
     [email],
   );
   return rows[0] ? mapRow(rows[0]) : null;
@@ -44,7 +47,7 @@ export async function findUserByEmailWithPasswordHash(email: string): Promise<{
   passwordHash: string | null;
 } | null> {
   const { rows } = await getPool().query<UserRow>(
-    `SELECT id, email, role, avatar_url, avatar_public_id, password_hash
+    `SELECT id, email, role, status, avatar_url, avatar_public_id, password_hash
      FROM users
      WHERE lower(email) = lower($1)
      LIMIT 1`,
@@ -57,7 +60,7 @@ export async function findUserByEmailWithPasswordHash(email: string): Promise<{
 
 export async function findUserById(id: string): Promise<AuthUser | null> {
   const { rows } = await getPool().query<UserRow>(
-    `SELECT id, email, role, avatar_url, avatar_public_id FROM users WHERE id = $1 LIMIT 1`,
+    `SELECT id, email, role, status, avatar_url, avatar_public_id FROM users WHERE id = $1 LIMIT 1`,
     [id],
   );
   return rows[0] ? mapRow(rows[0]) : null;
@@ -73,7 +76,7 @@ export async function createUserWithPassword(params: {
   const { rows } = await getPool().query<UserRow>(
     `INSERT INTO users (email, password_hash, first_name, last_name, phone)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, email, role, avatar_url`,
+     RETURNING id, email, role, status, avatar_url`,
     [params.email, params.passwordHash, params.firstName, params.lastName, params.phone ?? null],
   );
   const row = rows[0];
@@ -129,7 +132,7 @@ export async function createUserFromGoogle(params: {
   const { rows } = await getPool().query<UserRow>(
     `INSERT INTO users (email, google_id, first_name, last_name, avatar_url)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, email, role, avatar_url`,
+     RETURNING id, email, role, status, avatar_url`,
     [params.email, params.googleId, params.firstName, params.lastName, params.avatarUrl],
   );
   const row = rows[0];
@@ -154,7 +157,7 @@ export async function linkGoogleToExistingUser(params: {
          avatar_url = CASE WHEN $5::text IS NOT NULL AND $5::text <> '' THEN $5 ELSE avatar_url END,
          updated_at = now()
      WHERE id = $1
-     RETURNING id, email, role, avatar_url`,
+     RETURNING id, email, role, status, avatar_url`,
     [params.userId, params.googleId, params.firstName, params.lastName, params.avatarUrl],
   );
   const row = rows[0];
@@ -178,7 +181,7 @@ export async function updateGoogleUserProfile(params: {
          avatar_url = CASE WHEN $4::text IS NOT NULL AND $4::text <> '' THEN $4 ELSE avatar_url END,
          updated_at = now()
      WHERE id = $1
-     RETURNING id, email, role, avatar_url`,
+     RETURNING id, email, role, status, avatar_url`,
     [params.userId, params.firstName, params.lastName, params.avatarUrl],
   );
   const row = rows[0];
@@ -186,4 +189,16 @@ export async function updateGoogleUserProfile(params: {
     throw new Error('Failed to update Google profile');
   }
   return mapRow(row);
+}
+
+/** Middleware-д DB-ийн одоогийн төлвийг шалгах (JWT-д status байхгүй). */
+export async function findUserAccountStatusById(
+  userId: string,
+): Promise<UserAccountStatus | null> {
+  const { rows } = await getPool().query<{ status: string }>(
+    `SELECT status FROM users WHERE id = $1 LIMIT 1`,
+    [userId],
+  );
+  const row = rows[0];
+  return row ? normaliseUserStatus(row.status) : null;
 }

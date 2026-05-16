@@ -49,6 +49,12 @@ export default function UserDashboardPage() {
             >
               {t('dashboard.user.sidebar.incoming')}
             </Link>
+            <Link
+              to="/dashboard/reports"
+              className={cn('rounded-lg px-3 py-2.5 text-sm text-text-secondary hover:bg-surface-hover', focusRing)}
+            >
+              {t('dashboard.user.sidebar.reports')}
+            </Link>
           </div>
         </aside>
 

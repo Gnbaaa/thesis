@@ -49,6 +49,10 @@ export default function LoginPage() {
     const reason = searchParams.get('reason');
     if (reason === 'session_expired' || reason === 'session_invalid') {
       setError('root', { message: t('auth.errors.sessionEnded') });
+    } else if (reason === 'account_suspended') {
+      setError('root', { message: t('auth.errors.userSuspended') });
+    } else if (reason === 'account_closed') {
+      setError('root', { message: t('auth.errors.userClosed') });
     }
   }, [searchParams, setError, t]);
 
@@ -65,13 +69,25 @@ export default function LoginPage() {
       navigate('/pets');
     },
     onError: (err) => {
-      const msg = isAxiosError(err)
-        ? err.response?.data && typeof err.response.data === 'object' && 'message' in err.response.data
-          ? String((err.response.data as { message: unknown }).message)
-          : err.code === 'ERR_NETWORK'
-            ? t('auth.errors.network')
-            : t('auth.errors.unknown')
-        : t('auth.errors.unknown');
+      let msg = t('auth.errors.unknown');
+      if (isAxiosError(err)) {
+        if (err.code === 'ERR_NETWORK') {
+          msg = t('auth.errors.network');
+        } else {
+          const data = err.response?.data;
+          const payload =
+            data && typeof data === 'object' && 'error' in data
+              ? (data as { error?: { code?: string; message?: string } }).error
+              : undefined;
+          if (payload?.code === 'USER_SUSPENDED') {
+            msg = t('auth.errors.userSuspended');
+          } else if (payload?.code === 'USER_ACCOUNT_CLOSED') {
+            msg = t('auth.errors.userClosed');
+          } else if (payload?.message) {
+            msg = payload.message;
+          }
+        }
+      }
       setError('root', { message: msg });
     },
   });

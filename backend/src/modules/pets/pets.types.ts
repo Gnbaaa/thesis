@@ -53,6 +53,22 @@ export type PetListQuery = {
   pageSize: number;
 };
 
+export type OwnerPetActivityItem = {
+  id: string;
+  name: string;
+  species: PetSpecies;
+  status: PetStatus;
+  photoUrl: string | null;
+  createdAt: string;
+};
+
+export type OwnerPetActivityReport = {
+  totalCount: number;
+  byStatus: Record<PetStatus, number>;
+  /** Сүүлийн өргөтгөл (recent listings). */
+  recent: OwnerPetActivityItem[];
+};
+
 export type CreatePetInput = {
   ownerId: string;
   name: string;

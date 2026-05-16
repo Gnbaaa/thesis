@@ -2,6 +2,8 @@ import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
 import type {
   CreatePetInput,
+  OwnerPetActivityReport,
+  OwnerPetActivityItem,
   PetDetail,
   PetListItem,
   PetListQuery,
@@ -296,6 +298,74 @@ export async function updatePet(input: {
   );
   const row = rows[0];
   return row ? { id: row.id } : null;
+}
+
+/**
+ * Эзэмшигчийн оруулсан амьтны зарын идэвхийн тайлан.
+ * Нийт тоо + статусаар задаргаа + сүүлийн N жагсаалт.
+ */
+export async function getOwnerPetActivityReport(
+  ownerId: string,
+  options?: { recentLimit?: number },
+): Promise<OwnerPetActivityReport> {
+  const pool = getPool();
+  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 100);
+
+  const statsRes = await pool.query<{ status: string; cnt: string }>(
+    `
+    SELECT status, COUNT(*)::text AS cnt
+    FROM pets
+    WHERE owner_id = $1
+    GROUP BY status
+    `,
+    [ownerId],
+  );
+  const byStatus: Record<PetStatus, number> = { available: 0, pending: 0, adopted: 0 };
+  let totalCount = 0;
+  for (const row of statsRes.rows) {
+    const n = Number(row.cnt);
+    totalCount += n;
+    if (row.status === 'available' || row.status === 'pending' || row.status === 'adopted') {
+      byStatus[row.status as PetStatus] = n;
+    }
+  }
+
+  const recentRes = await pool.query<{
+    id: string;
+    name: string;
+    species: string;
+    status: string;
+    photo_public_id: string | null;
+    created_at: string;
+  }>(
+    `
+    SELECT id, name, species, status, photo_public_id, created_at
+    FROM pets
+    WHERE owner_id = $1
+    ORDER BY created_at DESC
+    LIMIT $2
+    `,
+    [ownerId, limit],
+  );
+
+  const recent: OwnerPetActivityItem[] = recentRes.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    species: ((r.species as PetSpecies) ?? 'other') as PetSpecies,
+    status: ((r.status as PetStatus) ?? 'available') as PetStatus,
+    photoUrl: r.photo_public_id ? safeImageUrl(r.photo_public_id, 320) : null,
+    createdAt: r.created_at,
+  }));
+
+  return { totalCount, byStatus, recent };
+}
+
+function safeImageUrl(publicId: string, width: number): string | null {
+  try {
+    return getImageUrl(publicId, { width });
+  } catch {
+    return null;
+  }
 }
 
 export async function findPetOwnerId(petId: string): Promise<string | null> {

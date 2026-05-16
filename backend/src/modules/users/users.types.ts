@@ -1,3 +1,5 @@
+export type UserProfileStatus = 'active' | 'suspended' | 'closed';
+
 export type UserProfile = {
   id: string;
   email: string;
@@ -6,7 +8,7 @@ export type UserProfile = {
   lastName: string;
   phone: string | null;
   avatarUrl: string | null;
-  status: 'active';
+  status: UserProfileStatus;
 };
 
 export type UserPublicProfile = {

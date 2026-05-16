@@ -67,6 +67,8 @@ export function verifyAccessToken(token: string): AuthUser {
     email: payload.email,
     role: payload.role,
     avatarUrl: payload.picture ?? null,
+    // JWT-д status байхгүй; authRequired DB-ээс шалгана.
+    status: 'active',
   };
 }
 

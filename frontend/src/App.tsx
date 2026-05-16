@@ -12,6 +12,7 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const NgoApplicationPage = lazy(() => import('@/pages/ngo/NgoApplicationPage'));
 const AdminNgoApplicationsPage = lazy(() => import('@/pages/admin/AdminNgoApplicationsPage'));
 const AdminNgoApplicationDetailPage = lazy(() => import('@/pages/admin/AdminNgoApplicationDetailPage'));
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
 const PetsListPage = lazy(() => import('@/pages/pets/PetsListPage'));
 const PetsAddPage = lazy(() => import('@/pages/pets/PetsAddPage'));
 const PetDetailPage = lazy(() => import('@/pages/pets/PetDetailPage'));
@@ -19,18 +20,22 @@ const PetsEditPage = lazy(() => import('@/pages/pets/PetsEditPage'));
 const AdoptionRequestPage = lazy(() => import('@/pages/adoption/AdoptionRequestPage'));
 const UserDashboardPage = lazy(() => import('@/pages/dashboard/UserDashboardPage'));
 const IncomingRequestsPage = lazy(() => import('@/pages/dashboard/IncomingRequestsPage'));
-const ComingSoonPage = lazy(() => import('@/pages/ComingSoonPage'));
+const ActivityReportPage = lazy(() => import('@/pages/dashboard/ActivityReportPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 const ChatPage = lazy(() => import('@/pages/chat/ChatPage'));
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
 const VolunteerListPage = lazy(() => import('@/pages/volunteer/VolunteerListPage'));
 const VolunteerAddPage = lazy(() => import('@/pages/volunteer/VolunteerAddPage'));
 const VolunteerDetailPage = lazy(() => import('@/pages/volunteer/VolunteerDetailPage'));
+const DonationsListPage = lazy(() => import('@/pages/donations/DonationsListPage'));
+const DonationsAddPage = lazy(() => import('@/pages/donations/DonationsAddPage'));
+const DonationsDetailPage = lazy(() => import('@/pages/donations/DonationsDetailPage'));
 
 function AppLayout() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const darkListPage = pathname === '/pets' || pathname === '/volunteer';
+  const darkListPage =
+    pathname === '/pets' || pathname === '/volunteer' || pathname === '/donations';
 
   return (
     <>
@@ -74,7 +79,7 @@ export default function App() {
         <Route path="ngo/apply" element={<NgoApplicationPage />} />
         <Route path="admin/ngo-applications" element={<AdminNgoApplicationsPage />} />
         <Route path="admin/ngo-applications/:id" element={<AdminNgoApplicationDetailPage />} />
-        <Route path="admin/users" element={<ComingSoonPage />} />
+        <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         <Route path="pets" element={<PetsListPage />} />
         <Route path="pets/new" element={<PetsAddPage />} />
@@ -83,7 +88,10 @@ export default function App() {
         <Route path="pets/:id/adopt" element={<AdoptionRequestPage />} />
         <Route path="dashboard" element={<UserDashboardPage />} />
         <Route path="dashboard/inbox" element={<IncomingRequestsPage />} />
-        <Route path="donations" element={<ComingSoonPage />} />
+        <Route path="dashboard/reports" element={<ActivityReportPage />} />
+        <Route path="donations" element={<DonationsListPage />} />
+        <Route path="donations/new" element={<DonationsAddPage />} />
+        <Route path="donations/:id" element={<DonationsDetailPage />} />
         <Route path="volunteer" element={<VolunteerListPage />} />
         <Route path="volunteer/new" element={<VolunteerAddPage />} />
         <Route path="volunteer/:id" element={<VolunteerDetailPage />} />

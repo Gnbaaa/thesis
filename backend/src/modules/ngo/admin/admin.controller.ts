@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors';
 import { getImageUrl, getRawUrl } from '../../../shared/storage';
+import * as notificationsService from '../../notifications/notifications.service';
 import type { NgoApplication, NgoApplicationStatus } from '../ngo.types';
 import * as repo from './admin.repository';
 
@@ -47,6 +48,32 @@ export async function updateStatus(req: Request, res: Response) {
   if (!updated) {
     throw new ConflictError('Энэ хүсэлт аль хэдийн шийдвэрлэгдсэн эсвэл олдсонгүй', 'NGO_APPLICATION_NOT_PENDING');
   }
+
+  if (body.status === 'approved') {
+    await notificationsService.notifySafe({
+      userId: updated.userId,
+      type: 'ngo_application_approved',
+      title: 'ТББ-ийн бүртгэл батлагдлаа',
+      body: `«${updated.orgName}» байгууллагын ТББ-ийн эрх идэвхжлээ. Одоо зар нэмж болно.`,
+      actionLabel: 'Самбар',
+      actionUrl: '/dashboard',
+      sourceId: `ngo_application:${updated.id}:approved`,
+    });
+  } else if (body.status === 'rejected') {
+    const note = body.note?.trim();
+    await notificationsService.notifySafe({
+      userId: updated.userId,
+      type: 'ngo_application_rejected',
+      title: 'ТББ-ийн хүсэлт татгалзлаа',
+      body: note
+        ? `«${updated.orgName}»-ийн хүсэлт татгалзлаа. Тайлбар: ${note}`
+        : `«${updated.orgName}»-ийн ТББ-ийн хүсэлт татгалзлаа.`,
+      actionLabel: 'Дахин илгээх',
+      actionUrl: '/ngo/apply',
+      sourceId: `ngo_application:${updated.id}:rejected`,
+    });
+  }
+
   res.json({ application: withDocumentUrl(updated) });
 }
 
