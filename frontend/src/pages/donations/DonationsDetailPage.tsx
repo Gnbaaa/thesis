@@ -13,9 +13,11 @@ import {
   donateToPost,
   getDonationPost,
   type DonationPostDetail,
-  type DonationPostStatus,
   type DonationTransactionPublic,
 } from '@/features/donations/donationsApi';
+import { DonationStatusBadge } from '@/features/donations/donationStatusBadge';
+import { donationStatusLabel } from '@/features/donations/donationStatusLabel';
+import { CenteredPage } from '@/components/layout/CenteredPage';
 import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
@@ -28,18 +30,6 @@ function formatMnt(value: number): string {
 function percent(collected: number, goal: number): number {
   if (!goal || goal <= 0) return 0;
   return Math.min(100, Math.max(0, Math.round((collected / goal) * 100)));
-}
-
-function statusLabel(status: DonationPostStatus, t: (k: string) => string) {
-  return status === 'active'
-    ? t('donations.status.active')
-    : t('donations.status.completed');
-}
-
-function statusPillClass(status: DonationPostStatus) {
-  return status === 'active'
-    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-200'
-    : 'bg-zinc-500/15 text-zinc-700 dark:text-zinc-200';
 }
 
 function formatDateYYYYMMDD(value: string | null | undefined): string {
@@ -131,15 +121,15 @@ export default function DonationsDetailPage() {
 
   if (query.isLoading) {
     return (
-      <section className="w-full max-w-[1280px]">
+      <CenteredPage maxWidth="2xl">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (query.isError || !data) {
     return (
-      <section className="w-full max-w-[1280px]">
+      <CenteredPage maxWidth="2xl">
         <button
           type="button"
           className={cn(btnSecondary, focusRing, 'h-10 w-auto px-4')}
@@ -150,7 +140,7 @@ export default function DonationsDetailPage() {
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('donations.detail.loadFailed')}
         </p>
-      </section>
+      </CenteredPage>
     );
   }
 
@@ -159,19 +149,19 @@ export default function DonationsDetailPage() {
   const canRenderStripe = Boolean(stripePromise);
 
   return (
-    <section className="w-full max-w-[1280px]">
+    <CenteredPage maxWidth="2xl">
       <Link
         to="/donations"
         className={cn(
-          'inline-flex items-center text-sm text-text-muted hover:text-text-secondary',
+          'inline-flex items-center text-sm font-medium text-accent hover:text-accent-hover',
           focusRing,
-          'rounded-md',
+          'rounded-input no-underline hover:no-underline',
         )}
       >
         {t('donations.detail.back')}
       </Link>
 
-      <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_420px] lg:gap-10">
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_400px] lg:gap-10">
         <div className="min-w-0">
           <div className="flex h-[280px] w-full items-center justify-center overflow-hidden rounded-card border border-border-card bg-surface-card sm:h-[320px]">
             {data.photoUrl ? (
@@ -187,17 +177,10 @@ export default function DonationsDetailPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <h1 className="flex-1 text-[26px] font-bold leading-tight tracking-tight text-text-heading">
+            <h1 className="flex-1 font-serif text-2xl font-semibold leading-tight tracking-tight text-text-heading sm:text-[26px]">
               {data.title}
             </h1>
-            <span
-              className={cn(
-                'inline-flex rounded-full px-3.5 py-1 text-xs font-semibold',
-                statusPillClass(data.status),
-              )}
-            >
-              {statusLabel(data.status, t)}
-            </span>
+            <DonationStatusBadge status={data.status} t={t} />
           </div>
 
           <div className="mt-6">
@@ -277,7 +260,7 @@ export default function DonationsDetailPage() {
             <div className="flex flex-col gap-2.5 pt-1">
               <InfoRow
                 label={t('donations.detail.fields.status')}
-                value={statusLabel(data.status, t)}
+                value={donationStatusLabel(data.status, t)}
               />
               <InfoRow
                 label={t('donations.detail.fields.publishedAt')}
@@ -356,7 +339,7 @@ export default function DonationsDetailPage() {
           </div>
         </aside>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 

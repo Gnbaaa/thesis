@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { adminListNgoApplications, type AdminNgoApplicationStatus, type AdminNgoListResponse } from '@/features/admin/adminNgoApi';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
 
@@ -20,10 +22,10 @@ function statusLabel(s: AdminNgoApplicationStatus, t: (k: string) => string): st
   return t('admin.ngo.status.rejected');
 }
 
-function statusPillClass(s: AdminNgoApplicationStatus): string {
-  if (s === 'approved') return 'bg-emerald-50 text-emerald-700';
-  if (s === 'rejected') return 'bg-rose-50 text-rose-700';
-  return 'bg-amber-50 text-amber-700';
+function statusBadgeVariant(s: AdminNgoApplicationStatus): 'success' | 'danger' | 'warning' {
+  if (s === 'approved') return 'success';
+  if (s === 'rejected') return 'danger';
+  return 'warning';
 }
 
 export default function AdminNgoApplicationsPage() {
@@ -45,10 +47,10 @@ export default function AdminNgoApplicationsPage() {
   }, [query.data?.total]);
 
   return (
-    <section className="w-full max-w-[1100px]">
+    <CenteredPage maxWidth="2xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text-heading">{t('admin.ngo.title')}</h1>
+          <h1 className="font-serif text-2xl font-semibold text-text-heading">{t('admin.ngo.title')}</h1>
         </div>
         <div className="text-sm text-text-muted">
           {t('admin.ngo.total', { count: query.data?.total ?? 0 })}
@@ -115,14 +117,16 @@ export default function AdminNgoApplicationsPage() {
                   <td className="px-4 py-3">{it.orgName}</td>
                   <td className="px-4 py-3 text-text-muted">{formatDate(it.submittedAt)}</td>
                   <td className="px-4 py-3">
-                    <span className={cn('inline-flex rounded-full px-3 py-1 text-xs font-medium', statusPillClass(it.status))}>
-                      {statusLabel(it.status, t)}
-                    </span>
+                    <Badge variant={statusBadgeVariant(it.status)}>{statusLabel(it.status, t)}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     <Link
                       to={`/admin/ngo-applications/${it.id}`}
-                      className={cn('text-sm font-medium text-primary hover:underline', focusRing)}
+                      className={cn(
+                        'text-sm font-medium text-accent no-underline hover:text-accent-hover hover:no-underline',
+                        focusRing,
+                        'rounded-input',
+                      )}
                     >
                       {t('admin.ngo.details')}
                     </Link>
@@ -182,7 +186,7 @@ export default function AdminNgoApplicationsPage() {
           ›
         </button>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 

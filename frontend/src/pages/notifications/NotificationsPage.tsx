@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import { CenteredPage } from '@/components/layout/CenteredPage';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
 import { useIsLoggedIn } from '@/lib/authSession';
@@ -46,16 +47,16 @@ export default function NotificationsPage() {
 
   if (!loggedIn) {
     return (
-      <section className="w-full max-w-md rounded-card border border-border-card bg-surface-card px-6 py-10">
+      <CenteredPage maxWidth="sm" className="rounded-card border border-border-card bg-surface-card px-6 py-10">
         <p className="text-sm text-text-secondary">{t('notifications.loginRequired')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   const items = query.data?.items ?? [];
 
   return (
-    <section className="w-full max-w-[1100px]">
+    <CenteredPage maxWidth="xl">
       <div className="flex items-center justify-between">
         <h1 className="text-[26px] font-semibold leading-tight text-text-heading">{t('notifications.title')}</h1>
         <button
@@ -119,7 +120,7 @@ export default function NotificationsPage() {
           {t('notifications.back')}
         </button>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 

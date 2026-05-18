@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppNavbar } from '@/components/layout/AppNavbar';
-import { cn } from '@/lib/cn';
+import { PageContainer } from '@/components/layout/PageContainer';
 
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
@@ -33,24 +33,12 @@ const DonationsDetailPage = lazy(() => import('@/pages/donations/DonationsDetail
 
 function AppLayout() {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
-  const darkListPage =
-    pathname === '/pets' || pathname === '/volunteer' || pathname === '/donations';
 
   return (
     <>
       <AppNavbar />
-      <div
-        className={cn('min-h-[calc(100vh-4rem)]', darkListPage ? 'bg-black' : 'bg-surface-muted')}
-      >
-        <div
-          className={cn(
-            'mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1440px] justify-center',
-            darkListPage
-              ? 'px-4 py-4 sm:px-5 sm:py-5 md:px-6 lg:px-8'
-              : 'px-4 py-8 sm:px-6 md:py-12 lg:px-20',
-          )}
-        >
+      <main className="min-h-[calc(100vh-4rem)] bg-surface">
+        <PageContainer className="mx-auto px-4 py-8 sm:px-6 md:py-10 lg:px-12">
           <Suspense
             fallback={
               <div className="flex w-full max-w-md flex-col items-center justify-center gap-2 rounded-card border border-border-card bg-surface-card px-8 py-14">
@@ -60,8 +48,8 @@ function AppLayout() {
           >
             <Outlet />
           </Suspense>
-        </div>
-      </div>
+        </PageContainer>
+      </main>
     </>
   );
 }

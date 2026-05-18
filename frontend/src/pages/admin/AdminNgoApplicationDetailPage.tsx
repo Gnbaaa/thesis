@@ -7,8 +7,11 @@ import {
   adminUpdateNgoApplicationStatus,
   type AdminNgoApplicationStatus,
 } from '@/features/admin/adminNgoApi';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
-import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
+import { focusRing } from '@/lib/uiClasses';
 
 function formatDate(d: string): string {
   try {
@@ -24,10 +27,10 @@ function statusLabel(s: AdminNgoApplicationStatus, t: (k: string) => string): st
   return t('admin.ngo.status.rejected');
 }
 
-function statusPillClass(s: AdminNgoApplicationStatus): string {
-  if (s === 'approved') return 'bg-emerald-50 text-emerald-700';
-  if (s === 'rejected') return 'bg-rose-50 text-rose-700';
-  return 'bg-amber-50 text-amber-700';
+function statusBadgeVariant(s: AdminNgoApplicationStatus): 'success' | 'danger' | 'warning' {
+  if (s === 'approved') return 'success';
+  if (s === 'rejected') return 'danger';
+  return 'warning';
 }
 
 export default function AdminNgoApplicationDetailPage() {
@@ -65,18 +68,17 @@ export default function AdminNgoApplicationDetailPage() {
   }, [app, t]);
 
   return (
-    <section className="w-full max-w-[1100px]">
-      <Link to="/admin/ngo-applications" className={cn('text-sm text-text-muted hover:text-text-secondary', focusRing)}>
+    <CenteredPage maxWidth="2xl">
+      <Link
+        to="/admin/ngo-applications"
+        className={cn('text-sm text-text-muted no-underline hover:text-text-secondary', focusRing)}
+      >
         ← {t('admin.ngo.backToList')}
       </Link>
 
       <div className="mt-3 flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-text-heading">{t('admin.ngo.detail.title')}</h1>
-        {app ? (
-          <span className={cn('inline-flex rounded-full px-3 py-1 text-xs font-medium', statusPillClass(app.status))}>
-            {statusLabel(app.status, t)}
-          </span>
-        ) : null}
+        <h1 className="font-serif text-2xl font-semibold text-text-heading">{t('admin.ngo.detail.title')}</h1>
+        {app ? <Badge variant={statusBadgeVariant(app.status)}>{statusLabel(app.status, t)}</Badge> : null}
       </div>
 
       {query.isLoading ? (
@@ -133,7 +135,10 @@ export default function AdminNgoApplicationDetailPage() {
                       href={app.documentUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className={cn('text-sm font-medium text-primary hover:underline', focusRing)}
+                      className={cn(
+                        'text-sm font-medium text-accent no-underline hover:text-accent-hover hover:no-underline',
+                        focusRing,
+                      )}
                     >
                       {t('admin.ngo.detail.download')}
                     </a>
@@ -147,31 +152,32 @@ export default function AdminNgoApplicationDetailPage() {
                 <h2 className="text-sm font-semibold text-text-heading">{t('admin.ngo.detail.sectionActions')}</h2>
               </div>
               <div className="flex flex-col gap-3 p-5">
-                <button
+                <Button
                   type="button"
-                  className={cn(btnPrimary, focusRing, 'h-11')}
+                  className="w-full"
                   onClick={() => mutation.mutate('approved')}
                   disabled={mutation.isPending || app.status !== 'pending'}
                 >
                   {t('admin.ngo.detail.approve')}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className={cn(btnSecondary, focusRing, 'h-11 border-rose-300 text-rose-600 hover:bg-rose-50')}
+                  variant="secondary"
+                  className="w-full border-danger/40 text-danger hover:bg-danger/10"
                   onClick={() => mutation.mutate('rejected')}
                   disabled={mutation.isPending || app.status !== 'pending'}
                 >
                   {t('admin.ngo.detail.reject')}
-                </button>
-                <button type="button" className={cn(btnSecondary, focusRing, 'h-11')} onClick={() => navigate(-1)}>
+                </Button>
+                <Button type="button" variant="secondary" className="w-full" onClick={() => navigate(-1)}>
                   {t('admin.ngo.detail.back')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </section>
+    </CenteredPage>
   );
 }
 

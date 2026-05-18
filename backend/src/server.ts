@@ -50,7 +50,12 @@ app.post(
 );
 
 app.use(express.json({ limit: '1mb' }));
-app.use(pinoHttp({ logger }));
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: process.env.NODE_ENV !== 'test',
+  }),
+);
 app.use(passport.initialize());
 
 app.get('/health', (_req: Request, res: Response) => {

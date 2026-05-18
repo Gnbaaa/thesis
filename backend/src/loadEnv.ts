@@ -18,8 +18,13 @@ function uniquePaths(paths: string[]): string[] {
 
 for (const envPath of uniquePaths(envFileCandidates())) {
   if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath, override: true });
+    dotenv.config({ path: envPath, override: true, quiet: true });
   }
+}
+
+// Jest sets NODE_ENV=test before importing the app; keep test output free of HTTP noise.
+if (process.env.NODE_ENV === 'test') {
+  process.env.LOG_LEVEL = 'silent';
 }
 
 export function getDotenvDiagnostics(): { cwd: string; loadedEnvFiles: { path: string; exists: boolean }[] } {

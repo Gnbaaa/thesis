@@ -5,17 +5,31 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowUp } from 'lucide-react';
+import { PawPrint } from 'lucide-react';
 import { getPet, updatePet, uploadPetImage, type PetDetail } from '@/features/pets/petsApi';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { ListingFormField } from '@/components/forms/ListingFormField';
+import { ListingFormHeader } from '@/components/forms/ListingFormHeader';
+import { ListingFormShell } from '@/components/forms/ListingFormShell';
+import { PhotoUploadZone } from '@/components/forms/PhotoUploadZone';
+import {
+  listingActionsClass,
+  listingChoiceClass,
+  listingChoiceRow,
+  listingChoiceRowSplit,
+  listingFormGrid2,
+  listingFormInner,
+  listingFormStack,
+  listingInputClass,
+  listingSelectClass,
+  listingTextareaClass,
+} from '@/components/forms/listingFormStyles';
+import { Button } from '@/components/ui/Button';
 import { useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
-import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
+import { alertError, focusRing } from '@/lib/uiClasses';
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const inputBase =
-  'h-10 w-full rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text placeholder:text-text-muted transition-colors';
-const textAreaBase =
-  'min-h-[110px] w-full rounded-lg border border-border-input bg-surface-card px-3 py-3 text-sm text-text placeholder:text-text-muted';
 
 type FormValues = {
   name: string;
@@ -113,6 +127,8 @@ export default function PetsEditPage() {
     enabled: Boolean(petId),
   });
 
+  const displayPreviewUrl = previewUrl ?? petQuery.data?.photoUrl ?? null;
+
   const {
     register,
     handleSubmit,
@@ -161,6 +177,16 @@ export default function PetsEditPage() {
     if (f) setSelectedFile(f);
   };
 
+  const tips = useMemo(
+    () => [
+      t('pets.create.tips.photo'),
+      t('pets.create.tips.description'),
+      t('pets.create.tips.health'),
+      t('pets.create.tips.publish'),
+    ],
+    [t],
+  );
+
   const mutation = useMutation({
     mutationFn: async (p: { values: FormValues }) => {
       let photoId: string | null = null;
@@ -177,38 +203,34 @@ export default function PetsEditPage() {
 
   if (!loggedIn) {
     return (
-      <section className="w-full max-w-[640px]">
-        <h1 className="text-2xl font-semibold text-text-heading">{t('pets.edit.title')}</h1>
-        <p className="mt-3 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
-          {t('pets.create.loginRequired')}
-        </p>
-        <p className="mt-4 text-sm text-text-secondary">
-          <Link to="/login" className="text-text-heading underline">
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/pets" backLabel={t('pets.create.back')} />
+        <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
+          {t('pets.create.loginRequired')}{' '}
+          <Link to="/login" className="font-medium text-accent underline">
             {t('pets.create.loginFirst')}
           </Link>
         </p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (petQuery.isLoading) {
     return (
-      <section className="w-full max-w-[880px]">
+      <CenteredPage maxWidth="form">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (petQuery.isError || !petQuery.data) {
     return (
-      <section className="w-full max-w-[880px]">
-        <button type="button" className={cn(btnSecondary, focusRing, 'h-10 w-auto px-4')} onClick={() => navigate('/pets')}>
-          {t('pets.create.back')}
-        </button>
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/pets" backLabel={t('pets.create.back')} />
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('pets.detail.loadFailed')}
         </p>
-      </section>
+      </CenteredPage>
     );
   }
 
@@ -217,137 +239,125 @@ export default function PetsEditPage() {
   };
 
   return (
-    <section className="w-full max-w-[880px]">
-      <div>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex items-center text-sm text-text-muted hover:text-text-secondary',
-            focusRing,
-            'rounded-md',
-          )}
-          onClick={() => navigate(-1)}
-        >
-          {t('pets.create.back')}
-        </button>
-        <h1 className="mt-2 text-2xl font-semibold text-text-heading">{t('pets.edit.title')}</h1>
-      </div>
-      <p className="mt-2 text-sm text-text-muted">{t('pets.edit.subtitle')}</p>
-
-      <form className="mt-6 rounded-card border border-border-card bg-surface-card p-6 sm:p-8" onSubmit={(e) => e.preventDefault()}>
+    <ListingFormShell
+      backTo={`/pets/${petId}`}
+      backLabel={t('pets.create.back')}
+      panelTitle={t('pets.create.panelTitle')}
+      tips={tips}
+      icon={PawPrint}
+    >
+      <form className={listingFormInner} onSubmit={(e) => e.preventDefault()} noValidate>
         {mutation.isError ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          <p className={cn('mb-4', alertError)} role="alert">
             {t('pets.edit.submitError')}
           </p>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label={t('pets.create.name')} error={errors.name?.message}>
-            <input {...register('name')} className={cn(inputBase, focusRing)} autoComplete="off" placeholder={t('pets.create.namePh')} />
-          </Field>
-          <Field label={t('pets.filters.species')} error={errors.species?.message}>
-            <select {...register('species')} className={cn(inputBase, focusRing, 'pr-2')}>
-              <option value="dog">{t('pets.species.dog')}</option>
-              <option value="cat">{t('pets.species.cat')}</option>
-              <option value="other">{t('pets.species.other')}</option>
-            </select>
-          </Field>
-        </div>
+        <div className={listingFormStack}>
+          <div className={listingFormGrid2}>
+            <ListingFormField label={t('pets.create.name')} error={errors.name?.message}>
+              <input
+                {...register('name')}
+                className={cn(listingInputClass, focusRing)}
+                autoComplete="off"
+                placeholder={t('pets.create.namePh')}
+              />
+            </ListingFormField>
+            <ListingFormField label={t('pets.filters.species')} error={errors.species?.message}>
+              <select {...register('species')} className={cn(listingSelectClass, focusRing)}>
+                <option value="dog">{t('pets.species.dog')}</option>
+                <option value="cat">{t('pets.species.cat')}</option>
+                <option value="other">{t('pets.species.other')}</option>
+              </select>
+            </ListingFormField>
+          </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div>
-            <span className="text-sm font-medium text-text-secondary">{t('pets.filters.sex')}</span>
-            <div className={cn('mt-2 flex flex-wrap gap-6 rounded-lg border border-border-input bg-surface-card px-3 py-2.5', focusRing, 'ring-offset-0')}>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
-                <input type="radio" value="male" className="size-4" {...register('sex')} />
-                {t('pets.sex.male')}
+          <div className={listingFormGrid2}>
+            <div className="grid gap-1.5">
+              <span className="text-xs font-medium text-text-label">{t('pets.filters.sex')}</span>
+              <div className={listingChoiceRowSplit}>
+                <label className={listingChoiceClass}>
+                  <input type="radio" value="male" className="size-3.5 accent-primary" {...register('sex')} />
+                  {t('pets.sex.male')}
+                </label>
+                <label className={listingChoiceClass}>
+                  <input type="radio" value="female" className="size-3.5 accent-primary" {...register('sex')} />
+                  {t('pets.sex.female')}
+                </label>
+              </div>
+              {errors.sex ? <p className="text-xs text-danger-text">{errors.sex.message}</p> : null}
+            </div>
+            <ListingFormField label={t('pets.create.breed')} error={errors.breed?.message}>
+              <input
+                {...register('breed')}
+                className={cn(listingInputClass, focusRing)}
+                placeholder={t('pets.create.breedPh')}
+              />
+            </ListingFormField>
+          </div>
+
+          <ListingFormField label={t('pets.create.age')} error={errors.ageYears?.message}>
+            <input
+              {...register('ageYears')}
+              className={cn(listingInputClass, focusRing)}
+              placeholder={t('pets.create.agePh')}
+              inputMode="numeric"
+            />
+          </ListingFormField>
+
+          <div className="grid gap-1.5">
+            <span className="text-xs font-medium text-text-label">{t('pets.create.health')}</span>
+            <div className={listingChoiceRow}>
+              <label className={listingChoiceClass}>
+                <input type="checkbox" className="size-3.5 rounded-input accent-primary" {...register('vaccinated')} />
+                {t('pets.create.healthVaccinated')}
               </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
-                <input type="radio" value="female" className="size-4" {...register('sex')} />
-                {t('pets.sex.female')}
+              <label className={listingChoiceClass}>
+                <input type="checkbox" className="size-3.5 rounded-input accent-primary" {...register('neutered')} />
+                {t('pets.create.healthNeutered')}
+              </label>
+              <label className={listingChoiceClass}>
+                <input type="checkbox" className="size-3.5 rounded-input accent-primary" {...register('spayed')} />
+                {t('pets.create.healthSpayed')}
               </label>
             </div>
-            {errors.sex ? <p className="mt-1 text-xs text-red-600">{errors.sex.message}</p> : null}
           </div>
-          <Field label={t('pets.create.breed')} error={errors.breed?.message}>
-            <input {...register('breed')} className={cn(inputBase, focusRing)} placeholder={t('pets.create.breedPh')} />
-          </Field>
+
+          <ListingFormField label={t('pets.create.description')} error={errors.description?.message}>
+            <textarea
+              {...register('description')}
+              className={cn(listingTextareaClass, focusRing)}
+              placeholder={t('pets.create.descriptionPh')}
+            />
+          </ListingFormField>
+
+          <PhotoUploadZone
+            label={t('pets.create.photo')}
+            dropHint={t('pets.create.photoDrop')}
+            typesHint={t('pets.create.photoTypes')}
+            chooseLabel={t('ngo.apply.chooseFile')}
+            previewUrl={displayPreviewUrl}
+            fileName={file?.name ?? null}
+            fileError={fileError}
+            fileRef={fileRef}
+            onDrop={onDrop}
+            onChoose={() => fileRef.current?.click()}
+            onFileChange={setSelectedFile}
+          />
         </div>
 
-        <div className="mt-5">
-          <Field label={t('pets.create.age')} error={errors.ageYears?.message}>
-            <input {...register('ageYears')} className={cn(inputBase, focusRing)} placeholder={t('pets.create.agePh')} inputMode="numeric" />
-          </Field>
-        </div>
-
-        <div className="mt-5">
-          <span className="text-sm font-medium text-text-secondary">{t('pets.create.health')}</span>
-          <div className="mt-2 flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 text-sm text-text">
-              <input type="checkbox" className="size-4 rounded" {...register('vaccinated')} />
-              {t('pets.create.healthVaccinated')}
-            </label>
-            <label className="flex items-center gap-2 text-sm text-text">
-              <input type="checkbox" className="size-4 rounded" {...register('neutered')} />
-              {t('pets.create.healthNeutered')}
-            </label>
-            <label className="flex items-center gap-2 text-sm text-text">
-              <input type="checkbox" className="size-4 rounded" {...register('spayed')} />
-              {t('pets.create.healthSpayed')}
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-5">
-          <Field label={t('pets.create.description')} error={errors.description?.message}>
-            <textarea {...register('description')} className={cn(textAreaBase, focusRing)} placeholder={t('pets.create.descriptionPh')} />
-          </Field>
-        </div>
-
-        <div className="mt-5">
-          <span className="text-sm font-medium text-text-secondary">{t('pets.create.photo')}</span>
-          <div className="mt-2 flex flex-col items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-border-input bg-surface-muted px-5 py-8" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-card text-text-muted">
-              <ArrowUp className="size-5" aria-hidden />
-            </div>
-            {previewUrl ? (
-              <img src={previewUrl} alt="" className="mt-1 max-h-32 rounded-lg object-contain" />
-            ) : petQuery.data.photoUrl ? (
-              <img src={petQuery.data.photoUrl} alt="" className="mt-1 max-h-32 rounded-lg object-contain" />
-            ) : null}
-            <p className="text-sm font-medium text-text-secondary">{t('pets.create.photoDrop')}</p>
-            <p className="text-xs text-text-muted">{t('pets.create.photoTypes')}</p>
-            <button type="button" onClick={() => fileRef.current?.click()} className={cn(btnSecondary, focusRing, 'h-9 px-5 text-xs')}>
-              {t('ngo.apply.chooseFile')}
-            </button>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)} />
-            {file ? <p className="text-xs text-text-muted">{file.name}</p> : null}
-            {fileError ? <p className="text-xs text-red-600">{fileError}</p> : null}
-          </div>
-        </div>
-
-        <div className="mt-7 border-t border-border-card pt-6" />
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className={cn(btnPrimary, focusRing, 'h-11 min-w-[120px] px-4')} disabled={mutation.isPending} onClick={handleSubmit(onSave)}>
-            {mutation.isPending ? t('common.loading') : t('pets.edit.save')}
-          </button>
-          <Link to={`/pets/${petId}`} className={cn(btnSecondary, focusRing, 'inline-flex h-11 min-w-[120px] items-center justify-center px-4')}>
+        <div className={listingActionsClass}>
+          <Link
+            to={`/pets/${petId}`}
+            className="inline-flex h-9 items-center justify-center rounded-input px-3 text-sm font-medium text-secondary-fg transition-colors hover:bg-surface-hover hover:text-text-heading"
+          >
             {t('pets.edit.cancel')}
           </Link>
+          <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSave)}>
+            {mutation.isPending ? t('common.loading') : t('pets.edit.save')}
+          </Button>
         </div>
       </form>
-    </section>
+    </ListingFormShell>
   );
 }
-
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-sm font-medium text-text-secondary">{label}</span>
-      {children}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
-    </label>
-  );
-}
-

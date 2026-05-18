@@ -10,9 +10,12 @@ import {
   type UserRole,
   type UserStatus,
 } from '@/features/admin/adminUsersApi';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { getAuthUserId } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
-import { alertError, btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
+import { alertError, focusRing } from '@/lib/uiClasses';
 
 type RoleFilter = 'all' | UserRole;
 type StatusFilter = 'all' | UserStatus;
@@ -34,16 +37,16 @@ function fullName(u: Pick<AdminUserListItem, 'firstName' | 'lastName' | 'email'>
   return name || u.email;
 }
 
-function rolePillClass(r: UserRole): string {
-  if (r === 'admin') return 'bg-violet-50 text-violet-700';
-  if (r === 'ngo') return 'bg-emerald-50 text-emerald-700';
-  return 'bg-sky-50 text-sky-700';
+function roleBadgeVariant(r: UserRole): 'warning' | 'success' | 'muted' {
+  if (r === 'admin') return 'warning';
+  if (r === 'ngo') return 'success';
+  return 'muted';
 }
 
-function statusPillClass(s: UserStatus): string {
-  if (s === 'active') return 'bg-emerald-50 text-emerald-700';
-  if (s === 'suspended') return 'bg-amber-50 text-amber-700';
-  return 'bg-rose-50 text-rose-700';
+function statusBadgeVariant(s: UserStatus): 'success' | 'warning' | 'danger' {
+  if (s === 'active') return 'success';
+  if (s === 'suspended') return 'warning';
+  return 'danger';
 }
 
 /** 300ms debounce for the search input — keeps NFR-P2 in mind. */
@@ -112,9 +115,9 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <section className="w-full max-w-[1280px]">
+    <CenteredPage maxWidth="2xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-[26px] font-bold leading-tight text-text-heading">
+        <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">
           {t('adminUsers.title')}
         </h1>
         <p className="text-sm text-text-muted">
@@ -204,31 +207,20 @@ export default function AdminUsersPage() {
                     {u.phone || t('adminUsers.noPhone')}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        'inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold',
-                        rolePillClass(u.role),
-                      )}
-                    >
-                      {t(`adminUsers.roles.${u.role}`)}
-                    </span>
+                    <Badge variant={roleBadgeVariant(u.role)}>{t(`adminUsers.roles.${u.role}`)}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        'inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold',
-                        statusPillClass(u.status),
-                      )}
-                    >
+                    <Badge variant={statusBadgeVariant(u.status)}>
                       {t(`adminUsers.statuses.${u.status}`)}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"
                       className={cn(
-                        'text-sm font-medium text-primary underline-offset-2 hover:underline',
+                        'text-sm font-medium text-accent hover:text-accent-hover',
                         focusRing,
+                        'rounded-input',
                       )}
                       onClick={() => setSelectedId(u.id)}
                     >
@@ -311,7 +303,7 @@ export default function AdminUsersPage() {
           }}
         />
       ) : null}
-    </section>
+    </CenteredPage>
   );
 }
 
@@ -448,25 +440,16 @@ function UserDrawer({ user, isSelf, onClose, onSaved }: UserDrawerProps) {
         ) : null}
 
         <div className="mt-auto flex justify-end gap-3 pt-3">
-          <button
-            type="button"
-            className={cn(btnSecondary, focusRing, 'h-11 rounded-lg px-5')}
-            onClick={onClose}
-          >
+          <Button type="button" variant="secondary" onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             disabled={isSelf || saving || (!roleChanged && !statusChanged)}
             onClick={save}
-            className={cn(
-              btnPrimary,
-              focusRing,
-              'h-11 rounded-lg px-5 disabled:opacity-60',
-            )}
           >
             {saving ? t('adminUsers.drawer.saving') : t('adminUsers.drawer.save')}
-          </button>
+          </Button>
         </div>
       </aside>
     </div>

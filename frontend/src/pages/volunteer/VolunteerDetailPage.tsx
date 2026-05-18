@@ -7,23 +7,14 @@ import {
   registerForVolunteerPost,
   unregisterFromVolunteerPost,
   type VolunteerPostDetail,
-  type VolunteerPostStatus,
 } from '@/features/volunteer/volunteerApi';
+import { VolunteerStatusBadge } from '@/features/volunteer/volunteerStatusBadge';
+import { volunteerStatusLabel } from '@/features/volunteer/volunteerStatusLabel';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
-
-function statusLabel(status: VolunteerPostStatus, t: (k: string) => string) {
-  return status === 'active'
-    ? t('volunteer.status.active')
-    : t('volunteer.status.completed');
-}
-
-function statusPillClass(status: VolunteerPostStatus) {
-  return status === 'active'
-    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-200'
-    : 'bg-zinc-500/15 text-zinc-700 dark:text-zinc-200';
-}
 
 function formatDateYYYYMMDD(value: string | null | undefined): string {
   if (!value) return '';
@@ -71,7 +62,7 @@ export default function VolunteerDetailPage() {
       eventDate: formatDateYYYYMMDD(data.eventDate),
       required: `${data.requiredCount} ${t('volunteer.detail.unit')}`,
       registered: `${data.registeredCount} ${t('volunteer.detail.unit')}`,
-      status: statusLabel(data.status, t),
+      status: volunteerStatusLabel(data.status, t),
       publishedAt: formatDateYYYYMMDD(data.createdAt),
     };
   }, [data, t]);
@@ -91,15 +82,15 @@ export default function VolunteerDetailPage() {
 
   if (query.isLoading) {
     return (
-      <section className="w-full max-w-[1280px]">
+      <CenteredPage maxWidth="2xl">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (query.isError || !data || !info) {
     return (
-      <section className="w-full max-w-[1280px]">
+      <CenteredPage maxWidth="2xl">
         <button
           type="button"
           className={cn(btnSecondary, focusRing, 'h-10 w-auto px-4')}
@@ -110,7 +101,7 @@ export default function VolunteerDetailPage() {
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('volunteer.detail.loadFailed')}
         </p>
-      </section>
+      </CenteredPage>
     );
   }
 
@@ -122,16 +113,12 @@ export default function VolunteerDetailPage() {
   function renderActionButton() {
     if (isOwner) {
       return (
-        <Link
+        <ButtonLink
           to={`/volunteer/${postId}/edit`}
-          className={cn(
-            btnPrimary,
-            focusRing,
-            'flex h-[52px] w-full items-center justify-center rounded-[10px] text-[16px] font-semibold',
-          )}
+          className="flex h-[52px] w-full items-center justify-center rounded-input text-base font-semibold"
         >
           {t('volunteer.detail.edit')}
-        </Link>
+        </ButtonLink>
       );
     }
     if (isClosed) {
@@ -214,19 +201,19 @@ export default function VolunteerDetailPage() {
   }
 
   return (
-    <section className="w-full max-w-[1280px]">
+    <CenteredPage maxWidth="2xl">
       <Link
         to="/volunteer"
         className={cn(
-          'inline-flex items-center text-sm text-text-muted hover:text-text-secondary',
+          'inline-flex items-center text-sm font-medium text-accent hover:text-accent-hover',
           focusRing,
-          'rounded-md',
+          'rounded-input no-underline hover:no-underline',
         )}
       >
         {t('volunteer.detail.back')}
       </Link>
 
-      <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_400px] lg:gap-10">
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:gap-10">
         <div className="min-w-0">
           <div className="flex h-[280px] w-full items-center justify-center overflow-hidden rounded-card border border-border-card bg-surface-card sm:h-[320px]">
             {data.photoUrl ? (
@@ -242,17 +229,10 @@ export default function VolunteerDetailPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <h1 className="flex-1 text-[26px] font-bold leading-tight tracking-tight text-text-heading">
+            <h1 className="flex-1 font-serif text-2xl font-semibold leading-tight tracking-tight text-text-heading sm:text-[26px]">
               {data.title}
             </h1>
-            <span
-              className={cn(
-                'inline-flex rounded-full px-3.5 py-1 text-xs font-semibold',
-                statusPillClass(data.status),
-              )}
-            >
-              {statusLabel(data.status, t)}
-            </span>
+            <VolunteerStatusBadge status={data.status} t={t} />
           </div>
 
           <div className="mt-6">
@@ -322,6 +302,6 @@ export default function VolunteerDetailPage() {
           {renderNote()}
         </aside>
       </div>
-    </section>
+    </CenteredPage>
   );
 }

@@ -6,7 +6,9 @@ import './i18n';
 import './index.css';
 import App from './App.tsx';
 import { initAuthSessionListeners } from '@/lib/authSession';
+import { initTheme } from '@/lib/theme';
 
+initTheme();
 initAuthSessionListeners();
 
 const queryClient = new QueryClient({

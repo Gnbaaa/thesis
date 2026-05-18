@@ -5,24 +5,32 @@ import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowUp } from 'lucide-react';
 import {
   createDonationPost,
   uploadDonationImage,
   type CreateDonationPostRequest,
 } from '@/features/donations/donationsApi';
+import { HeartHandshake } from 'lucide-react';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { ListingFormField } from '@/components/forms/ListingFormField';
+import { ListingFormHeader } from '@/components/forms/ListingFormHeader';
+import { ListingFormShell } from '@/components/forms/ListingFormShell';
+import { PhotoUploadZone } from '@/components/forms/PhotoUploadZone';
+import {
+  listingActionsClass,
+  listingFormInner,
+  listingFormStack,
+  listingInputClass,
+  listingTextareaClass,
+} from '@/components/forms/listingFormStyles';
+import { Button } from '@/components/ui/Button';
 import { getAuthRole, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
-import { alertError, btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
+import { alertError, focusRing } from '@/lib/uiClasses';
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const MIN_GOAL = 1000;
 const MAX_GOAL = 10_000_000_000;
-
-const inputBase =
-  'h-10 w-full rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text placeholder:text-text-muted transition-colors';
-const textAreaBase =
-  'min-h-[110px] w-full rounded-lg border border-border-input bg-surface-card px-3 py-3 text-sm text-text placeholder:text-text-muted transition-colors';
 
 type FormValues = {
   title: string;
@@ -136,6 +144,16 @@ export default function DonationsAddPage() {
     if (f) setSelectedFile(f);
   };
 
+  const tips = useMemo(
+    () => [
+      t('donations.create.tips.goal'),
+      t('donations.create.tips.description'),
+      t('donations.create.tips.photo'),
+      t('donations.create.tips.trust'),
+    ],
+    [t],
+  );
+
   const mutation = useMutation({
     mutationFn: async (p: { values: FormValues }) => {
       let photoId: string | null = null;
@@ -152,48 +170,26 @@ export default function DonationsAddPage() {
 
   if (!loggedIn) {
     return (
-      <section className="w-full max-w-[640px]">
-        <h1 className="text-2xl font-semibold text-text-heading">
-          {t('donations.create.title')}
-        </h1>
-        <p className="mt-3 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
-          {t('donations.create.loginRequired')}
-        </p>
-        <p className="mt-4 text-sm text-text-secondary">
-          <Link to="/login" className="text-text-heading underline">
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/donations" backLabel={t('donations.create.back')} />
+        <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
+          {t('donations.create.loginRequired')}{' '}
+          <Link to="/login" className="font-medium text-accent underline">
             {t('donations.create.loginFirst')}
           </Link>
         </p>
-        <div className="mt-4">
-          <Link
-            to="/donations"
-            className={cn(btnSecondary, focusRing, 'inline-flex h-10 items-center justify-center px-4')}
-          >
-            {t('donations.create.back')}
-          </Link>
-        </div>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (!canCreate) {
     return (
-      <section className="w-full max-w-[640px]">
-        <h1 className="text-2xl font-semibold text-text-heading">
-          {t('donations.create.title')}
-        </h1>
-        <p className="mt-3 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/donations" backLabel={t('donations.create.back')} />
+        <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('donations.create.roleRequired')}
         </p>
-        <div className="mt-4">
-          <Link
-            to="/donations"
-            className={cn(btnSecondary, focusRing, 'inline-flex h-10 items-center justify-center px-4')}
-          >
-            {t('donations.create.back')}
-          </Link>
-        </div>
-      </section>
+      </CenteredPage>
     );
   }
 
@@ -202,66 +198,49 @@ export default function DonationsAddPage() {
   };
 
   return (
-    <section className="w-full max-w-[880px]">
-      <div>
-        <Link
-          to="/donations"
-          className={cn(
-            'inline-flex items-center rounded-md text-sm text-text-muted transition-colors hover:text-text-secondary',
-            focusRing,
-          )}
-        >
-          {t('donations.create.back')}
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-text-heading">
-          {t('donations.create.title')}
-        </h1>
-      </div>
-      <p className="mt-2 text-sm text-text-muted">{t('donations.create.subtitle')}</p>
-
-      <form
-        className="mt-6 rounded-card border border-border-card bg-surface-card p-6 sm:p-8"
-        onSubmit={(e) => e.preventDefault()}
-        noValidate
-      >
+    <ListingFormShell
+      backTo="/donations"
+      backLabel={t('donations.create.back')}
+      panelTitle={t('donations.create.panelTitle')}
+      tips={tips}
+      icon={HeartHandshake}
+    >
+      <form className={listingFormInner} onSubmit={(e) => e.preventDefault()} noValidate>
         {mutation.isError ? (
-          <p className={cn('mb-5', alertError)} role="alert">
+          <p className={cn('mb-4', alertError)} role="alert">
             {t('donations.create.submitError')}
           </p>
         ) : null}
 
-        <div className="flex flex-col gap-5">
-          <Field label={t('donations.create.fields.titleLabel')} error={errors.title?.message}>
+        <div className={listingFormStack}>
+          <ListingFormField label={t('donations.create.fields.titleLabel')} error={errors.title?.message}>
             <input
               type="text"
               {...register('title')}
-              className={cn(inputBase, focusRing)}
+              className={cn(listingInputClass, focusRing)}
               placeholder={t('donations.create.fields.titlePh')}
               autoComplete="off"
             />
-          </Field>
+          </ListingFormField>
 
-          <Field
+          <ListingFormField
             label={t('donations.create.fields.description')}
             error={errors.description?.message}
           >
             <textarea
               {...register('description')}
-              className={cn(textAreaBase, focusRing)}
+              className={cn(listingTextareaClass, focusRing)}
               placeholder={t('donations.create.fields.descriptionPh')}
-              rows={5}
+              rows={4}
             />
-          </Field>
+          </ListingFormField>
 
-          <Field
-            label={t('donations.create.fields.goalAmount')}
-            error={errors.goalAmount?.message}
-          >
+          <ListingFormField label={t('donations.create.fields.goalAmount')} error={errors.goalAmount?.message}>
             <div className="relative">
               <input
                 type="text"
                 {...register('goalAmount')}
-                className={cn(inputBase, focusRing, 'pr-9')}
+                className={cn(listingInputClass, focusRing, 'pr-9')}
                 placeholder={t('donations.create.fields.goalAmountPh')}
                 inputMode="numeric"
                 autoComplete="off"
@@ -270,99 +249,41 @@ export default function DonationsAddPage() {
                 {t('donations.create.fields.currencySuffix')}
               </span>
             </div>
-          </Field>
+          </ListingFormField>
 
-          <div>
-            <span className="text-sm font-medium text-text-secondary">
-              {t('donations.create.fields.photo')}
-            </span>
-            <div
-              className="mt-2 flex flex-col items-center justify-center gap-2.5 rounded-[10px] border border-dashed border-border-input bg-surface-muted px-5 py-8"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onDrop}
-            >
-              <div className="flex size-12 items-center justify-center rounded-full bg-surface-hover text-text-muted">
-                <ArrowUp className="size-5" strokeWidth={1.75} aria-hidden />
-              </div>
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt=""
-                  className="mt-1 max-h-40 rounded-lg object-contain"
-                />
-              ) : null}
-              <p className="text-sm font-medium text-text-secondary">
-                {t('donations.create.fields.photoDrop')}
-              </p>
-              <p className="text-xs text-text-muted">
-                {t('donations.create.fields.photoTypes')}
-              </p>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className={cn(btnSecondary, focusRing, 'h-9 px-5 text-xs')}
-              >
-                {t('donations.create.fields.chooseFile')}
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                className="sr-only"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-              />
-              {file ? <p className="text-xs text-text-muted">{file.name}</p> : null}
-              {fileError ? <p className="text-xs text-danger-text">{fileError}</p> : null}
-            </div>
-          </div>
+          <PhotoUploadZone
+            label={t('donations.create.fields.photo')}
+            dropHint={t('donations.create.fields.photoDrop')}
+            typesHint={t('donations.create.fields.photoTypes')}
+            chooseLabel={t('donations.create.fields.chooseFile')}
+            previewUrl={previewUrl}
+            fileName={file?.name ?? null}
+            fileError={fileError}
+            fileRef={fileRef}
+            onDrop={onDrop}
+            onChoose={() => fileRef.current?.click()}
+            onFileChange={setSelectedFile}
+          />
         </div>
 
-        <div className="mt-7 border-t border-border-card pt-6" />
-
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <button
+        <div className={listingActionsClass}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            {t('donations.create.actions.cancel')}
+          </Button>
+          <Button
             type="button"
-            className={cn(btnPrimary, focusRing, 'h-11 min-w-[120px] px-4')}
-            disabled={mutation.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {mutation.isPending ? t('common.loading') : t('donations.create.actions.publish')}
-          </button>
-          <button
-            type="button"
-            className={cn(btnSecondary, focusRing, 'h-11 min-w-[120px] px-4')}
+            variant="secondary"
+            size="sm"
             disabled={mutation.isPending}
             onClick={handleSubmit(onSubmit)}
           >
             {mutation.isPending ? t('common.loading') : t('donations.create.actions.save')}
-          </button>
-          <button
-            type="button"
-            className={cn(btnSecondary, focusRing, 'h-11 min-w-[120px] px-4')}
-            onClick={() => navigate(-1)}
-          >
-            {t('donations.create.actions.cancel')}
-          </button>
+          </Button>
+          <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSubmit)}>
+            {mutation.isPending ? t('common.loading') : t('donations.create.actions.publish')}
+          </Button>
         </div>
       </form>
-    </section>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-sm font-medium text-text-secondary">{label}</span>
-      {children}
-      {error ? <span className="text-xs text-danger-text">{error}</span> : null}
-    </label>
+    </ListingFormShell>
   );
 }

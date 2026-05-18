@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -9,6 +9,8 @@ import {
   type PetSpecies,
   type VolunteerPostStatus,
 } from '@/features/reports/reportsApi';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { getAuthRole } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
 
@@ -56,37 +58,6 @@ function shortenRef(value: string | null): string {
   return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
-function Sidebar() {
-  const { t } = useTranslation();
-  const { pathname } = useLocation();
-  const items: Array<{ to: string; key: string; active: boolean }> = [
-    { to: '/dashboard', key: 'dashboard', active: pathname === '/dashboard' },
-    { to: '/dashboard/inbox', key: 'incoming', active: pathname === '/dashboard/inbox' },
-    { to: '/dashboard/reports', key: 'reports', active: pathname === '/dashboard/reports' },
-  ];
-  return (
-    <aside className="border-b border-border-card bg-surface px-4 py-5 md:border-b-0 md:border-r">
-      <div className="grid gap-1">
-        {items.map((it) => (
-          <Link
-            key={it.to}
-            to={it.to}
-            className={cn(
-              'rounded-lg px-3 py-2.5 text-sm',
-              focusRing,
-              it.active
-                ? 'bg-surface-muted font-semibold text-text-heading'
-                : 'text-text-secondary hover:bg-surface-hover',
-            )}
-          >
-            {t(`dashboard.user.sidebar.${it.key}`)}
-          </Link>
-        ))}
-      </div>
-    </aside>
-  );
-}
-
 function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex-1 rounded-card border border-border-card bg-surface-card px-6 py-5">
@@ -99,26 +70,28 @@ function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
 export default function ActivityReportPage() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabId>('donations');
+  const role = getAuthRole();
 
   const query = useQuery({
     queryKey: ['dashboard', 'reports'],
     queryFn: getActivityReport,
     staleTime: 30_000,
+    enabled: role === 'ngo',
   });
+
+  if (role !== 'ngo') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const donations = query.data?.donations;
   const pets = query.data?.pets;
   const volunteer = query.data?.volunteer;
 
   return (
-    <section className="w-full max-w-[1280px]">
-      <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-card border border-border-card bg-surface-card md:grid-cols-[260px_1fr]">
-        <Sidebar />
-
-        <main className="bg-surface-muted px-5 py-7 md:px-10 md:py-9">
-          <h1 className="text-[26px] font-bold leading-tight text-text-heading">
-            {t('dashboard.reports.title')}
-          </h1>
+    <DashboardLayout>
+      <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">
+        {t('dashboard.reports.title')}
+      </h1>
 
           {query.isError ? (
             <p className={cn(alertError, 'mt-4')} role="alert">
@@ -435,8 +408,6 @@ export default function ActivityReportPage() {
               </div>
             </div>
           ) : null}
-        </main>
-      </div>
-    </section>
+    </DashboardLayout>
   );
 }

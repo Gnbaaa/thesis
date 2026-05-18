@@ -6,24 +6,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { getPet } from '@/features/pets/petsApi';
+import { PetStatusBadge } from '@/features/pets/petStatusBadge';
 import { createAdoptionRequest } from '@/features/adoption/adoptionApi';
 import { adoptionRequestSchema, type AdoptionRequestFormValues } from '@/features/adoption/schemas';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
-import { alertError, btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
+import { alertError, focusRing } from '@/lib/uiClasses';
 
 const inputBase =
   'h-11 w-full rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text placeholder:text-text-muted transition-colors';
 const textAreaBase =
   'min-h-[110px] w-full rounded-lg border border-border-input bg-surface-card px-3 py-3 text-sm text-text placeholder:text-text-muted';
-
-function petStatusLabel(status: string, t: (k: string) => string) {
-  return status === 'available'
-    ? t('pets.status.available')
-    : status === 'pending'
-      ? t('pets.status.pending')
-      : t('pets.status.adopted');
-}
 
 export default function AdoptionRequestPage() {
   const { t } = useTranslation();
@@ -92,30 +88,37 @@ export default function AdoptionRequestPage() {
 
   if (!petId) {
     return (
-      <section className="w-full max-w-[1100px]">
+      <CenteredPage maxWidth="2xl">
         <p className="text-sm text-text-muted">{t('adoption.request.errors.invalidPet')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (!loggedIn) {
     return (
-      <section className="w-full max-w-[1100px]">
+      <CenteredPage maxWidth="2xl">
         <header>
-          <Link to={`/pets/${petId}`} className={cn('text-sm text-text-muted hover:text-text-secondary', focusRing, 'rounded-md')}>
+          <Link
+            to={`/pets/${petId}`}
+            className={cn(
+              'text-sm font-medium text-accent hover:text-accent-hover',
+              focusRing,
+              'rounded-input no-underline hover:no-underline',
+            )}
+          >
             {t('adoption.request.back')}
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-text-heading">{t('adoption.request.title')}</h1>
+          <h1 className="mt-2 font-serif text-2xl font-semibold text-text-heading">{t('adoption.request.title')}</h1>
         </header>
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('adoption.request.loginRequired')}
         </p>
         <div className="mt-4">
-          <Link to="/login" className={cn(btnPrimary, focusRing, 'h-11 max-w-[220px]')}>
+          <ButtonLink to="/login" className="max-w-[220px]">
             {t('adoption.request.goLogin')}
-          </Link>
+          </ButtonLink>
         </div>
-      </section>
+      </CenteredPage>
     );
   }
 
@@ -124,15 +127,23 @@ export default function AdoptionRequestPage() {
   const alreadySent = Boolean(pet && pet.myRequestStatus === 'pending');
 
   return (
-    <section className="w-full max-w-[1200px]">
+    <CenteredPage maxWidth="2xl">
       <header className="flex flex-col gap-2">
-        <button type="button" className={cn('text-left text-sm text-text-muted hover:text-text-secondary', focusRing, 'rounded-md')} onClick={() => navigate(-1)}>
+        <button
+          type="button"
+          className={cn(
+            'text-left text-sm font-medium text-accent hover:text-accent-hover',
+            focusRing,
+            'rounded-input',
+          )}
+          onClick={() => navigate(-1)}
+        >
           {t('adoption.request.back')}
         </button>
-        <h1 className="text-[26px] font-semibold leading-tight text-text-heading">{t('adoption.request.title')}</h1>
+        <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">{t('adoption.request.title')}</h1>
       </header>
 
-      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:gap-8">
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
         <div className="min-w-0">
           <div className="rounded-card border border-border-card bg-surface-card p-6 sm:p-8">
             <h2 className="text-[17px] font-semibold text-text-heading">{t('adoption.request.form.title')}</h2>
@@ -203,12 +214,12 @@ export default function AdoptionRequestPage() {
               ) : null}
 
               <div className="mt-1 grid grid-cols-2 gap-3">
-                <Link to={`/pets/${petId}`} className={cn(btnSecondary, focusRing, 'h-12 rounded-lg')}>
+                <ButtonLink to={`/pets/${petId}`} variant="secondary" className="h-12">
                   {t('common.cancel')}
-                </Link>
-                <button type="submit" disabled={mutation.isPending} className={cn(btnPrimary, focusRing, 'h-12 rounded-lg')}>
+                </ButtonLink>
+                <Button type="submit" disabled={mutation.isPending} className="h-12">
                   {mutation.isPending ? t('common.loading') : t('common.send')}
-                </button>
+                </Button>
               </div>
               </form>
             )}
@@ -227,11 +238,7 @@ export default function AdoptionRequestPage() {
             <div className="px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-lg font-semibold text-text-heading">{pet?.name ?? t('common.loading')}</p>
-                {pet ? (
-                  <span className="inline-flex rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-text-secondary">
-                    {petStatusLabel(pet.status, t)}
-                  </span>
-                ) : null}
+                {pet ? <PetStatusBadge status={pet.status} t={t} /> : null}
               </div>
               {pet ? (
                 <>
@@ -292,7 +299,7 @@ export default function AdoptionRequestPage() {
           </div>
         </aside>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 

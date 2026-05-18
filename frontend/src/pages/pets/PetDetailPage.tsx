@@ -2,26 +2,14 @@ import { useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { getPet, type PetDetail, type PetSpecies, type PetStatus } from '@/features/pets/petsApi';
+import { getPet, type PetDetail, type PetSpecies } from '@/features/pets/petsApi';
+import { PetStatusBadge } from '@/features/pets/petStatusBadge';
+import { petStatusLabel } from '@/features/pets/petStatusLabel';
+import { CenteredPage } from '@/components/layout/CenteredPage';
 import { getAuthUserId } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
-
-function statusLabel(status: PetStatus, t: (k: string) => string) {
-  return status === 'available'
-    ? t('pets.status.available')
-    : status === 'pending'
-      ? t('pets.status.pending')
-      : t('pets.status.adopted');
-}
-
-function statusPillClass(status: PetStatus) {
-  return status === 'available'
-    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-200'
-    : status === 'pending'
-      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200'
-      : 'bg-zinc-500/15 text-zinc-700 dark:text-zinc-200';
-}
 
 function speciesLabel(species: PetSpecies, t: (k: string) => string) {
   return species === 'dog'
@@ -87,39 +75,46 @@ export default function PetDetailPage() {
       breed: data.breed?.trim() ? data.breed : t('pets.detail.unknown'),
       age: typeof data.ageYears === 'number' ? `${data.ageYears} ${t('pets.ageUnit')}` : t('pets.detail.unknown'),
       health: healthSummary(data, t),
-      status: statusLabel(data.status, t),
+      status: petStatusLabel(data.status, t),
       published: formatDateYYYYMMDD(data.createdAt),
     };
   }, [data, t]);
 
   if (query.isLoading) {
     return (
-      <section className="w-full max-w-[1100px]">
+      <CenteredPage maxWidth="2xl">
         <p className="text-sm text-text-muted">{t('common.loading')}</p>
-      </section>
+      </CenteredPage>
     );
   }
 
   if (query.isError || !data || !info) {
     return (
-      <section className="w-full max-w-[1100px]">
+      <CenteredPage maxWidth="2xl">
         <button type="button" className={cn(btnSecondary, focusRing, 'h-10 w-auto px-4')} onClick={() => navigate('/pets')}>
           {t('pets.detail.back')}
         </button>
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('pets.detail.loadFailed')}
         </p>
-      </section>
+      </CenteredPage>
     );
   }
 
   return (
-    <section className="w-full max-w-[1200px]">
-      <Link to="/pets" className={cn('inline-flex items-center text-sm text-text-muted hover:text-text-secondary', focusRing, 'rounded-md')}>
+    <CenteredPage maxWidth="2xl">
+      <Link
+        to="/pets"
+        className={cn(
+          'inline-flex items-center text-sm font-medium text-accent hover:text-accent-hover',
+          focusRing,
+          'rounded-input',
+        )}
+      >
         {t('pets.detail.back')}
       </Link>
 
-      <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[560px_1fr] lg:gap-12">
+      <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12">
         <div className="w-full">
           <div className="flex h-[340px] w-full items-center justify-center overflow-hidden rounded-card border border-border-card bg-surface-card sm:h-[420px]">
             {data.photoUrl ? (
@@ -128,14 +123,29 @@ export default function PetDetailPage() {
               <span className="text-sm text-text-muted">{t('pets.photoPlaceholder')}</span>
             )}
           </div>
+
+          <div className="mt-4">
+            <h2 className="text-[15px] font-semibold text-text-heading">{t('pets.detail.publisher')}</h2>
+            <div className="mt-2 flex items-center gap-3 rounded-card border border-border-card bg-surface-card px-5 py-4">
+              <div className="size-11 overflow-hidden rounded-full border border-border-card bg-surface-muted">
+                {data.owner.avatarUrl ? (
+                  <img src={data.owner.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                ) : null}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-text">{data.owner.displayName}</p>
+                <p className="text-xs text-text-muted">
+                  {data.owner.role === 'ngo' ? t('pets.detail.publisherNgo') : t('pets.detail.publisherUser')}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-text-heading">{title}</h1>
-            <span className={cn('inline-flex rounded-full px-3 py-1 text-xs font-semibold', statusPillClass(data.status))}>
-              {statusLabel(data.status, t)}
-            </span>
+            <h1 className="font-serif text-2xl font-semibold tracking-tight text-text-heading sm:text-3xl">{title}</h1>
+            <PetStatusBadge status={data.status} t={t} />
           </div>
 
           <div className="mt-6">
@@ -159,31 +169,14 @@ export default function PetDetailPage() {
           </div>
 
           <div className="mt-6">
-            <h2 className="text-[15px] font-semibold text-text-heading">{t('pets.detail.publisher')}</h2>
-            <div className="mt-2 flex items-center gap-3 rounded-card border border-border-card bg-surface-card px-5 py-4">
-              <div className="size-11 overflow-hidden rounded-full border border-border-card bg-surface-muted">
-                {data.owner.avatarUrl ? (
-                  <img src={data.owner.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                ) : null}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-text">{data.owner.displayName}</p>
-                <p className="text-xs text-text-muted">
-                  {data.owner.role === 'ngo' ? t('pets.detail.publisherNgo') : t('pets.detail.publisherUser')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6">
             {isOwnListing ? (
               <div className="flex justify-center">
-                <Link
+                <ButtonLink
                   to={`/pets/${petId}/edit`}
-                  className={cn(btnPrimary, focusRing, 'h-[50px] w-full max-w-[320px] rounded-[10px] text-[15px]')}
+                  className="h-[50px] w-full max-w-[320px] rounded-input text-[15px]"
                 >
                   {t('pets.detail.edit')}
-                </Link>
+                </ButtonLink>
               </div>
             ) : data.status === 'adopted' ? (
               <div className="flex justify-center">
@@ -207,12 +200,12 @@ export default function PetDetailPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Link
+                <ButtonLink
                   to={`/pets/${petId}/adopt`}
-                  className={cn(btnPrimary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}
+                  className="h-[50px] rounded-input text-[15px]"
                 >
                   {t('pets.detail.sendRequest')}
-                </Link>
+                </ButtonLink>
                 <button
                   type="button"
                   className={cn(btnSecondary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}
@@ -225,7 +218,7 @@ export default function PetDetailPage() {
           </div>
         </div>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 

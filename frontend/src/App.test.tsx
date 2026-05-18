@@ -24,7 +24,7 @@ function renderWithProviders(ui: ReactElement, initial = '/') {
 describe('App', () => {
   it('redirects / to /pets', async () => {
     renderWithProviders(<App />, '/');
-    expect(await screen.findByRole('heading', { name: /^Амьтны зар$/i })).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('Хайх...')).toBeInTheDocument();
   });
 
   it('renders login title on /login', async () => {

@@ -4,13 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User as UserIcon } from 'lucide-react';
 import { getMyProfile, uploadMyAvatar } from '@/features/users/usersApi';
-import { cn } from '@/lib/cn';
+import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { clearAuthSession } from '@/lib/authSession';
-import { btnSecondary, focusRing } from '@/lib/uiClasses';
 
-function roleLabel(role: string, t: (k: string) => string): string {
-  if (role === 'user') return t('profile.roleUser');
-  return role;
+function roleBadge(role: string, t: (k: string) => string) {
+  if (role === 'ngo') {
+    return <Badge variant="success">{t('profile.roleNgo')}</Badge>;
+  }
+  if (role === 'admin') {
+    return <Badge variant="warning">{t('profile.roleAdmin')}</Badge>;
+  }
+  return <Badge variant="muted">{t('profile.roleUser')}</Badge>;
 }
 
 export default function ProfilePage() {
@@ -40,14 +46,20 @@ export default function ProfilePage() {
   }, [query.data]);
 
   if (query.isLoading) {
-    return <p className="text-sm text-text-muted">{t('common.loading')}</p>;
+    return (
+      <CenteredPage maxWidth="md">
+        <p className="text-sm text-text-muted">{t('common.loading')}</p>
+      </CenteredPage>
+    );
   }
 
   if (query.isError || !query.data) {
     return (
-      <section className="w-full max-w-[920px] rounded-card border border-border-card bg-surface-card p-6">
-        <p className="text-sm text-text-secondary">{t('auth.errors.unknown')}</p>
-      </section>
+      <CenteredPage maxWidth="md">
+        <div className="rounded-card border border-border-card bg-surface-card p-6">
+          <p className="text-sm text-text-secondary">{t('auth.errors.unknown')}</p>
+        </div>
+      </CenteredPage>
     );
   }
 
@@ -55,25 +67,23 @@ export default function ProfilePage() {
   const pic = p.avatarUrl;
 
   return (
-    <section className="w-full max-w-[920px]">
-      <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-start sm:gap-6">
-        <div className="mt-1 flex size-[96px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-hover">
+    <CenteredPage maxWidth="md">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+        <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-card bg-surface-hover">
           {pic ? (
             <img src={pic} alt="" className="size-full object-cover" referrerPolicy="no-referrer" />
           ) : (
-            <UserIcon className="size-8 text-text-muted" strokeWidth={1.75} aria-hidden />
+            <UserIcon className="size-9 text-text-muted" strokeWidth={1.75} aria-hidden />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold text-text-heading">{fullName}</h1>
+          <h1 className="font-serif text-xl font-semibold text-text-heading">{fullName}</h1>
           <p className="mt-1 text-sm text-text-muted">{p.email}</p>
-          <span className="mt-2 inline-flex items-center rounded-full bg-surface-hover px-3 py-1 text-xs font-medium text-text-secondary">
-            {roleLabel(p.role, t)}
-          </span>
+          <div className="mt-2">{roleBadge(p.role, t)}</div>
         </div>
 
-        <div className="shrink-0 sm:self-start">
+        <div className="shrink-0 sm:ml-auto sm:self-start">
           <input
             ref={fileRef}
             type="file"
@@ -86,23 +96,24 @@ export default function ProfilePage() {
               e.target.value = '';
             }}
           />
-          <button
+          <Button
             type="button"
-            className={cn(btnSecondary, focusRing, 'h-9 w-auto px-4')}
+            variant="secondary"
+            size="sm"
             onClick={() => fileRef.current?.click()}
             disabled={uploadMutation.isPending}
           >
             {uploadMutation.isPending ? t('common.loading') : t('profile.uploadPhoto')}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="mt-6 rounded-card border border-border-card bg-surface-card">
-        <div className="flex items-center justify-between border-b border-border-card px-4 py-4 sm:px-6">
-          <h2 className="text-sm font-semibold text-text-heading">{t('profile.sectionTitle')}</h2>
-          <button type="button" className={cn(btnSecondary, focusRing, 'h-9 w-auto px-4')} disabled>
+      <div className="mt-6 overflow-hidden rounded-card border border-border-card bg-surface-card">
+        <div className="flex items-center justify-between border-b border-border-card px-5 py-4 sm:px-6">
+          <h2 className="font-serif text-base font-semibold text-text-heading">{t('profile.sectionTitle')}</h2>
+          <Button type="button" variant="secondary" size="sm" disabled>
             {t('profile.edit')}
-          </button>
+          </Button>
         </div>
 
         <dl className="divide-y divide-border-card">
@@ -115,27 +126,26 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-6">
-        <button
+        <Button
           type="button"
-          className={cn(btnSecondary, focusRing, 'h-11 w-[120px]')}
+          variant="secondary"
           onClick={() => {
             clearAuthSession();
             navigate('/', { replace: true });
           }}
         >
           {t('profile.logout')}
-        </button>
+        </Button>
       </div>
-    </section>
+    </CenteredPage>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-1 gap-1 px-4 py-4 sm:grid-cols-[160px_1fr] sm:gap-4 sm:px-6">
+    <div className="grid grid-cols-1 gap-1 px-5 py-3.5 sm:grid-cols-[140px_1fr] sm:gap-4 sm:px-6">
       <dt className="text-sm text-text-muted">{label}</dt>
-      <dd className="text-sm text-text-secondary">{value}</dd>
+      <dd className="text-sm font-medium text-text">{value}</dd>
     </div>
   );
 }
-
