@@ -1,4 +1,10 @@
 jest.mock('../../../src/modules/pets/pets.repository');
+jest.mock('../../../src/shared/cache', () => ({
+  wrap: async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn(),
+  delByPrefix: jest.fn().mockResolvedValue(undefined),
+  buildListCacheKey: (prefix: string, query: object) => `${prefix}${JSON.stringify(query)}`,
+  LIST_CACHE_TTL_SEC: 60,
+}));
 
 import * as repo from '../../../src/modules/pets/pets.repository';
 import * as petsService from '../../../src/modules/pets/pets.service';

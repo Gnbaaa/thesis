@@ -20,7 +20,10 @@ import { donationsRouter } from './modules/donations/donations.routes';
 import { webhook as donationsWebhook } from './modules/donations/donations.controller';
 import { errorMiddleware } from './shared/error-middleware';
 import { connectMongo } from './infra/mongo/connection';
+import { closeRedis, pingRedis } from './infra/redis/client';
 import { attachSocket } from './realtime/socket';
+import { logCacheBackendOnce } from './shared/cache';
+import { getPool } from './infra/db/pool';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -58,8 +61,26 @@ app.use(
 );
 app.use(passport.initialize());
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
+app.get('/health', async (_req: Request, res: Response) => {
+  const checks: Record<string, string> = {};
+  try {
+    await getPool().query('SELECT 1');
+    checks.postgres = 'ok';
+  } catch {
+    checks.postgres = 'error';
+  }
+
+  try {
+    const mongoose = await import('mongoose');
+    checks.mongo = mongoose.connection.readyState === 1 ? 'ok' : 'disconnected';
+  } catch {
+    checks.mongo = 'error';
+  }
+
+  checks.redis = (await pingRedis()) ? 'ok' : 'disconnected';
+
+  const ok = checks.postgres === 'ok';
+  res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', checks });
 });
 
 app.use('/api/v1/auth', authRouter);
@@ -75,31 +96,36 @@ app.use('/api/v1/donations', donationsRouter);
 
 app.use(errorMiddleware);
 
+function startHttpServer(): void {
+  const server = http.createServer(app);
+  attachSocket(server);
+  server.listen(PORT, () => {
+    logCacheBackendOnce();
+    logger.info(
+      { port: PORT, googleOAuthConfigured: googleOAuthIsConfigured() },
+      'server.started',
+    );
+  });
+
+  const shutdown = () => {
+    logger.info('server.shutting_down');
+    server.close(() => {
+      void closeRedis().finally(() => process.exit(0));
+    });
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
+
 if (require.main === module) {
   connectMongo()
-    .then(() => {
-      const server = http.createServer(app);
-      attachSocket(server);
-      server.listen(PORT, () => {
-        logger.info(
-          { port: PORT, googleOAuthConfigured: googleOAuthIsConfigured() },
-          'server.started',
-        );
-      });
-    })
+    .then(() => startHttpServer())
     .catch((err) => {
       logger.error({ err }, 'mongo.connect_failed');
       if (process.env.NODE_ENV === 'production') {
         process.exit(1);
       }
-      const server = http.createServer(app);
-      attachSocket(server);
-      server.listen(PORT, () => {
-        logger.info(
-          { port: PORT, googleOAuthConfigured: googleOAuthIsConfigured(), mongo: 'disconnected' },
-          'server.started',
-        );
-      });
+      startHttpServer();
     });
 }
 

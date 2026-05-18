@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import * as cache from '../../shared/cache';
 import { logger } from '../../shared/logger';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../shared/errors';
 import * as notificationsService from '../notifications/notifications.service';
@@ -27,8 +28,15 @@ function normalisePhoto(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+const DONATIONS_LIST_CACHE_PREFIX = 'donations:list:';
+
+async function invalidateDonationsListCache(): Promise<void> {
+  await cache.delByPrefix(DONATIONS_LIST_CACHE_PREFIX);
+}
+
 export async function listDonationPosts(query: DonationPostListQuery) {
-  return await repo.listDonationPosts(query);
+  const key = cache.buildListCacheKey(DONATIONS_LIST_CACHE_PREFIX, query);
+  return cache.wrap(key, cache.LIST_CACHE_TTL_SEC, () => repo.listDonationPosts(query));
 }
 
 /**
@@ -52,7 +60,7 @@ export async function getDonationPostById(id: string) {
 
 export async function createDonationPost(params: { ownerId: string; body: CreateBody }) {
   const b = params.body;
-  return await repo.createDonationPost({
+  const created = await repo.createDonationPost({
     ownerId: params.ownerId,
     title: b.title.trim(),
     description: b.description.trim(),
@@ -60,6 +68,8 @@ export async function createDonationPost(params: { ownerId: string; body: Create
     status: b.status,
     photoPublicId: normalisePhoto(b.photoPublicId ?? null),
   });
+  await invalidateDonationsListCache();
+  return created;
 }
 
 /**
@@ -213,5 +223,6 @@ export async function updateDonationPost(params: {
   if (!updated) {
     throw new NotFoundError('Хандивын зар олдсонгүй', 'DONATION_POST_NOT_FOUND');
   }
+  await invalidateDonationsListCache();
   return updated;
 }

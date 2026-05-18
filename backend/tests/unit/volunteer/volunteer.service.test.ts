@@ -1,4 +1,10 @@
 jest.mock('../../../src/modules/volunteer/volunteer.repository');
+jest.mock('../../../src/shared/cache', () => ({
+  wrap: async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn(),
+  delByPrefix: jest.fn().mockResolvedValue(undefined),
+  buildListCacheKey: (prefix: string, query: object) => `${prefix}${JSON.stringify(query)}`,
+  LIST_CACHE_TTL_SEC: 60,
+}));
 jest.mock('../../../src/modules/users/users.service');
 jest.mock('../../../src/modules/notifications/notifications.service', () => ({
   notifySafe: jest.fn().mockResolvedValue(undefined),

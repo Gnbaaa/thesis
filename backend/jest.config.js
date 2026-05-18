@@ -12,6 +12,7 @@ const coreServiceGlobs = [
   'src/modules/users/users.service.ts',
   'src/modules/notifications/notifications.service.ts',
   'src/modules/uploads/uploads.service.ts',
+  'src/shared/cache.ts',
 ];
 
 /** @type {Record<string, { lines: number; statements: number }>} */

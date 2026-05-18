@@ -1,6 +1,4 @@
-# Локал хөгжүүлэлт: Postgres. .env (backend) дахь DATABASE_URL-тай тааруулсан.
-# Ашиглалт: Docker Desktop асаасны дараа төслийн үндсэн хавтасаас:
-#   docker compose up -d
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -24,6 +22,16 @@ services:
     volumes:
       - diploma_mongo_data:/data/db
 
+  redis:
+    image: redis:7-alpine
+    container_name: diploma-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - diploma_redis_data:/data
+
 volumes:
   diploma_pg_data:
   diploma_mongo_data:
+  diploma_redis_data:

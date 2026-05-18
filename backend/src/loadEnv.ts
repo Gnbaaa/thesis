@@ -22,8 +22,9 @@ for (const envPath of uniquePaths(envFileCandidates())) {
   }
 }
 
-// Jest sets NODE_ENV=test before importing the app; keep test output free of HTTP noise.
-if (process.env.NODE_ENV === 'test') {
+// Jest sets NODE_ENV=test before importing the app; .env must not override that.
+if (process.env.JEST_WORKER_ID !== undefined) {
+  process.env.NODE_ENV = 'test';
   process.env.LOG_LEVEL = 'silent';
 }
 

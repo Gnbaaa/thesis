@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import * as cache from '../../shared/cache';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../shared/errors';
 import * as notificationsService from '../notifications/notifications.service';
 import * as usersService from '../users/users.service';
@@ -17,8 +18,15 @@ function normalisePhoto(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+const VOLUNTEER_LIST_CACHE_PREFIX = 'volunteer:list:';
+
+async function invalidateVolunteerListCache(): Promise<void> {
+  await cache.delByPrefix(VOLUNTEER_LIST_CACHE_PREFIX);
+}
+
 export async function listVolunteerPosts(query: VolunteerPostListQuery) {
-  return await repo.listVolunteerPosts(query);
+  const key = cache.buildListCacheKey(VOLUNTEER_LIST_CACHE_PREFIX, query);
+  return cache.wrap(key, cache.LIST_CACHE_TTL_SEC, () => repo.listVolunteerPosts(query));
 }
 
 /**
@@ -84,7 +92,7 @@ export async function unregisterFromVolunteerPost(params: { postId: string; user
 
 export async function createVolunteerPost(params: { ownerId: string; body: CreateBody }) {
   const b = params.body;
-  return await repo.createVolunteerPost({
+  const created = await repo.createVolunteerPost({
     ownerId: params.ownerId,
     title: b.title.trim(),
     description: b.description.trim(),
@@ -94,6 +102,8 @@ export async function createVolunteerPost(params: { ownerId: string; body: Creat
     status: b.status,
     photoPublicId: normalisePhoto(b.photoPublicId ?? null),
   });
+  await invalidateVolunteerListCache();
+  return created;
 }
 
 export async function updateVolunteerPost(params: {
@@ -124,5 +134,6 @@ export async function updateVolunteerPost(params: {
   if (!updated) {
     throw new NotFoundError('Сайн дурын зар олдсонгүй', 'VOLUNTEER_POST_NOT_FOUND');
   }
+  await invalidateVolunteerListCache();
   return updated;
 }

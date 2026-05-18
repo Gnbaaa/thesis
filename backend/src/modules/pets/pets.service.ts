@@ -1,11 +1,19 @@
 import { createPetBody, updatePetBody } from './pets.schema';
 import type { z } from 'zod';
 import type { OwnerPetActivityReport, PetListQuery } from './pets.types';
+import * as cache from '../../shared/cache';
 import { ForbiddenError, NotFoundError } from '../../shared/errors';
 import * as repo from './pets.repository';
 
+const PETS_LIST_CACHE_PREFIX = 'pets:list:';
+
+async function invalidatePetsListCache(): Promise<void> {
+  await cache.delByPrefix(PETS_LIST_CACHE_PREFIX);
+}
+
 export async function listPets(query: PetListQuery) {
-  return await repo.listPets(query);
+  const key = cache.buildListCacheKey(PETS_LIST_CACHE_PREFIX, query);
+  return cache.wrap(key, cache.LIST_CACHE_TTL_SEC, () => repo.listPets(query));
 }
 
 /**
@@ -22,7 +30,7 @@ type CreateBody = z.infer<typeof createPetBody>;
 
 export async function createPet(params: { ownerId: string; body: CreateBody }) {
   const b = params.body;
-  return await repo.createPet({
+  const created = await repo.createPet({
     ownerId: params.ownerId,
     name: b.name.trim(),
     species: b.species,
@@ -36,6 +44,8 @@ export async function createPet(params: { ownerId: string; body: CreateBody }) {
     neutered: b.neutered,
     spayed: b.spayed,
   });
+  await invalidatePetsListCache();
+  return created;
 }
 
 export async function getPetById(id: string) {
@@ -83,6 +93,7 @@ export async function updatePet(params: { petId: string; ownerId: string; body: 
   if (!updated) {
     throw new NotFoundError('Амьтны зар олдсонгүй', 'PET_NOT_FOUND');
   }
+  await invalidatePetsListCache();
   return updated;
 }
 
