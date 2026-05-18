@@ -75,4 +75,34 @@ describe('donations API', () => {
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('DONATION_POST_CLOSED');
   });
+
+  it('GET /api/v1/donations/:id rejects invalid uuid', async () => {
+    const res = await request(app).get('/api/v1/donations/not-a-uuid');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('POST /api/v1/donations forbids regular users from creating posts', async () => {
+    const res = await request(app)
+      .post('/api/v1/donations')
+      .set('Authorization', bearerToken({ role: 'user' }))
+      .send({
+        title: 'Help shelter',
+        description: 'We need food and medicine for rescued animals this month.',
+        goalAmount: 500000,
+      });
+
+    expect(res.status).toBe(403);
+    expect(mockDonations.createDonationPost).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/donations validates create body', async () => {
+    const res = await request(app)
+      .post('/api/v1/donations')
+      .set('Authorization', bearerToken({ role: 'ngo' }))
+      .send({ title: '', description: 'short', goalAmount: 0 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
 });

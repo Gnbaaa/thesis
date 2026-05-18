@@ -4,7 +4,7 @@ jest.mock('../../../src/shared/storage');
 import * as repo from '../../../src/modules/ngo/ngo.repository';
 import * as storage from '../../../src/shared/storage';
 import * as ngoService from '../../../src/modules/ngo/ngo.service';
-import { ValidationError } from '../../../src/shared/errors';
+import { ExternalServiceError, ValidationError } from '../../../src/shared/errors';
 import { mockAuthUser } from '../../helpers/mockUser';
 
 const mockRepo = jest.mocked(repo);
@@ -99,5 +99,28 @@ describe('ngo.service', () => {
     expect(mockRepo.createNgoApplication).toHaveBeenCalledWith(
       expect.objectContaining({ documentResourceType: 'raw' }),
     );
+  });
+
+  it('propagates document upload failures', async () => {
+    mockStorage.uploadNgoDocument.mockRejectedValue(
+      new ExternalServiceError('Cloudinary тохируулаагүй байна', 'CLOUDINARY_NOT_CONFIGURED'),
+    );
+
+    await expect(
+      ngoService.submitNgoApplication({
+        user: mockAuthUser(),
+        input: {
+          orgName: 'Test NGO',
+          registrationNumber: '123',
+          address: 'UB',
+          contactEmail: 'ngo@example.com',
+          contactPhone: '99001122',
+          description: 'We help animals',
+        },
+        file: { buffer: Buffer.from('pdf'), originalname: 'license.pdf' } as Express.Multer.File,
+      }),
+    ).rejects.toThrow(ExternalServiceError);
+
+    expect(mockRepo.createNgoApplication).not.toHaveBeenCalled();
   });
 });

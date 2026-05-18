@@ -270,15 +270,6 @@ export default function DonationsAddPage() {
           <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
             {t('donations.create.actions.cancel')}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={mutation.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {mutation.isPending ? t('common.loading') : t('donations.create.actions.save')}
-          </Button>
           <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSubmit)}>
             {mutation.isPending ? t('common.loading') : t('donations.create.actions.publish')}
           </Button>

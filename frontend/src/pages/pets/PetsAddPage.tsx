@@ -298,15 +298,6 @@ export default function PetsAddPage() {
           </Button>
           <Button
             type="button"
-            variant="secondary"
-            size="sm"
-            disabled={mutation.isPending}
-            onClick={handleSubmit((values) => mutation.mutate({ values }))}
-          >
-            {mutation.isPending ? t('common.loading') : t('pets.create.saveDraft')}
-          </Button>
-          <Button
-            type="button"
             size="sm"
             disabled={mutation.isPending}
             onClick={handleSubmit((values) => mutation.mutate({ values }))}

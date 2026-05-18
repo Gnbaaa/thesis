@@ -29,4 +29,13 @@ describe('uploads.service', () => {
     expect(out.url).toContain('cdn.example');
     expect(mockStorage.getImageUrl).toHaveBeenCalledWith('pets/img-1', { width: 800 });
   });
+
+  it('propagates storage upload failures', async () => {
+    mockStorage.uploadImage.mockRejectedValue(new Error('Cloudinary timeout'));
+
+    await expect(
+      uploadsService.uploadImage({ buffer: Buffer.from('jpeg'), folder: 'pets' }),
+    ).rejects.toThrow('Cloudinary timeout');
+    expect(mockStorage.getImageUrl).not.toHaveBeenCalled();
+  });
 });

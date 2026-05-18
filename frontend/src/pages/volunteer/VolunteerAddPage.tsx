@@ -277,15 +277,6 @@ export default function VolunteerAddPage() {
           <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
             {t('volunteer.create.actions.cancel')}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={mutation.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {mutation.isPending ? t('common.loading') : t('volunteer.create.actions.save')}
-          </Button>
           <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSubmit)}>
             {mutation.isPending ? t('common.loading') : t('volunteer.create.actions.publish')}
           </Button>

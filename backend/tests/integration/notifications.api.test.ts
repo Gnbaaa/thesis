@@ -49,4 +49,48 @@ describe('notifications API', () => {
     expect(res.status).toBe(200);
     expect(res.body.updated).toBe(2);
   });
+
+  it('GET /api/v1/notifications rejects limit above 100', async () => {
+    const res = await request(app)
+      .get('/api/v1/notifications?limit=500')
+      .set('Authorization', bearerToken());
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('GET /api/v1/notifications/unread-count requires auth', async () => {
+    const res = await request(app).get('/api/v1/notifications/unread-count');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/v1/notifications/unread-count rejects invalid type', async () => {
+    const res = await request(app)
+      .get('/api/v1/notifications/unread-count?type=not_a_real_type')
+      .set('Authorization', bearerToken());
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('POST /api/v1/notifications/mark-all-read requires auth', async () => {
+    const res = await request(app).post('/api/v1/notifications/mark-all-read');
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /api/v1/notifications/:id/read requires auth', async () => {
+    const res = await request(app).post('/api/v1/notifications/n-1/read');
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /api/v1/notifications/:id/read marks single notification', async () => {
+    mockNotifications.markMyNotificationRead.mockResolvedValue({ ok: true });
+
+    const res = await request(app)
+      .post('/api/v1/notifications/n-1/read')
+      .set('Authorization', bearerToken());
+
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
 });
