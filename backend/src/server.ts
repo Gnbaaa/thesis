@@ -19,6 +19,7 @@ import { volunteerRouter } from './modules/volunteer/volunteer.routes';
 import { donationsRouter } from './modules/donations/donations.routes';
 import { webhook as donationsWebhook } from './modules/donations/donations.controller';
 import { errorMiddleware } from './shared/error-middleware';
+import mongoose from 'mongoose';
 import { connectMongo } from './infra/mongo/connection';
 import { closeRedis, pingRedis } from './infra/redis/client';
 import { attachSocket } from './realtime/socket';
@@ -71,7 +72,6 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 
   try {
-    const mongoose = await import('mongoose');
     checks.mongo = mongoose.connection.readyState === 1 ? 'ok' : 'disconnected';
   } catch {
     checks.mongo = 'error';
