@@ -12,3 +12,9 @@ export function getPool(): pg.Pool {
   }
   return pool;
 }
+
+export async function closePool(): Promise<void> {
+  if (!pool) return;
+  await pool.end();
+  pool = null;
+}

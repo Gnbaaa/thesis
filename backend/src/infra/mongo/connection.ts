@@ -19,3 +19,12 @@ export async function connectMongo(): Promise<typeof mongoose> {
   return connectPromise;
 }
 
+export async function disconnectMongo(): Promise<void> {
+  if (mongoose.connection.readyState === 0) {
+    connectPromise = null;
+    return;
+  }
+  await mongoose.disconnect();
+  connectPromise = null;
+}
+
