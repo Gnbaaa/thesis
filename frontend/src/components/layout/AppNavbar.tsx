@@ -119,7 +119,7 @@ export function AppNavbar() {
     <header className="sticky top-0 z-20 shrink-0 border-b border-border-card bg-surface">
       <div className="relative mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4 sm:px-6 lg:px-10">
         <Link
-          to="/pets"
+          to="/"
           className={cn(
             'inline-flex items-center gap-2 rounded-input border border-border-card bg-surface-hover px-2.5 py-1.5 text-text-heading transition-colors hover:bg-surface-muted',
             focusRing,

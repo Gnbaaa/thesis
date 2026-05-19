@@ -14,11 +14,17 @@ import { alertError, btnPrimary, btnSecondary, focusRing, linkMuted, linkSubtle 
 import { cn } from '@/lib/cn';
 import { notifyAuthSessionChanged, useIsLoggedIn } from '@/lib/authSession';
 
+function safeNextPath(raw: string | null): string | null {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
+  return raw;
+}
+
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const loggedIn = useIsLoggedIn();
+  const nextPath = safeNextPath(searchParams.get('next'));
   const schema = useMemo(() => loginSchema(t), [t]);
 
   const {
@@ -33,9 +39,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loggedIn) {
-      navigate('/pets', { replace: true });
+      navigate(nextPath ?? '/pets', { replace: true });
     }
-  }, [loggedIn, navigate]);
+  }, [loggedIn, navigate, nextPath]);
 
   useEffect(() => {
     if (searchParams.get('error') !== 'google') {
@@ -66,7 +72,7 @@ export default function LoginPage() {
         localStorage.setItem('refreshToken', data.refreshToken);
       }
       notifyAuthSessionChanged();
-      navigate('/pets');
+      navigate(nextPath ?? '/pets');
     },
     onError: (err) => {
       let msg = t('auth.errors.unknown');

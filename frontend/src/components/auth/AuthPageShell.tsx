@@ -23,7 +23,7 @@ export function AuthPageShell({ children, className }: Props) {
       <aside className="flex flex-col justify-between gap-6 bg-auth-panel px-6 py-8 text-on-auth-panel sm:px-8 sm:py-10 lg:w-[40%] lg:shrink-0 lg:py-12">
         <div>
           <Link
-            to="/pets"
+            to="/"
             className={cn(
               'inline-flex size-10 items-center justify-center rounded-input border border-on-auth-panel/15 bg-on-auth-panel/10 text-on-auth-panel transition-opacity hover:bg-on-auth-panel/15',
               focusRingOnAuthPanel,

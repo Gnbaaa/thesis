@@ -22,9 +22,10 @@ function renderWithProviders(ui: ReactElement, initial = '/') {
 }
 
 describe('App', () => {
-  it('redirects / to /pets', async () => {
+  it('renders landing hero on /', async () => {
     renderWithProviders(<App />, '/');
-    expect(await screen.findByPlaceholderText('Хайх...')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Тэжээвэр амьтан/i);
+    expect(screen.getByRole('link', { name: /Зарууд үзэх/i })).toHaveAttribute('href', '/pets');
   });
 
   it('renders login title on /login', async () => {

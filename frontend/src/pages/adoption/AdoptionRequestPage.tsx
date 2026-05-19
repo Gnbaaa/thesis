@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { getPet } from '@/features/pets/petsApi';
 import { PetStatusBadge } from '@/features/pets/petStatusBadge';
@@ -24,6 +24,7 @@ const textAreaBase =
 export default function AdoptionRequestPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const loggedIn = useIsLoggedIn();
   const { id } = useParams();
   const petId = typeof id === 'string' ? id : '';
@@ -71,7 +72,8 @@ export default function AdoptionRequestPage() {
         contactPhone: values.contactPhone?.trim() ? values.contactPhone.trim() : null,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pets', 'detail', petId] });
       navigate(`/pets/${petId}`, { replace: true });
     },
     onError: (err) => {

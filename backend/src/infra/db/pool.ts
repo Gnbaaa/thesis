@@ -8,7 +8,12 @@ export function getPool(): pg.Pool {
     if (!connectionString) {
       throw new Error('DATABASE_URL is not set');
     }
-    pool = new pg.Pool({ connectionString });
+    pool = new pg.Pool({
+      connectionString,
+      max: Number(process.env.PG_POOL_MAX) || 20,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
   }
   return pool;
 }

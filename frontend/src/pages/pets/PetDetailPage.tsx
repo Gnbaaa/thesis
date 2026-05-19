@@ -6,7 +6,7 @@ import { getPet, type PetDetail, type PetSpecies } from '@/features/pets/petsApi
 import { PetStatusBadge } from '@/features/pets/petStatusBadge';
 import { petStatusLabel } from '@/features/pets/petStatusLabel';
 import { CenteredPage } from '@/components/layout/CenteredPage';
-import { getAuthUserId } from '@/lib/authSession';
+import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
@@ -49,6 +49,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export default function PetDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const loggedIn = useIsLoggedIn();
   const { id } = useParams();
 
   const petId = typeof id === 'string' ? id : '';
@@ -61,6 +62,15 @@ export default function PetDetailPage() {
   const data = query.data;
   const title = data?.name ?? t('pets.detail.title');
   const isOwnListing = Boolean(data?.owner?.id && getAuthUserId() && data.owner.id === getAuthUserId());
+
+  const startChat = (ownerId: string) => {
+    const chatPath = `/chat?to=${encodeURIComponent(ownerId)}`;
+    if (!loggedIn) {
+      navigate(`/login?next=${encodeURIComponent(chatPath)}`);
+      return;
+    }
+    navigate(chatPath);
+  };
 
   const info = useMemo(() => {
     if (!data) return null;
@@ -189,13 +199,20 @@ export default function PetDetailPage() {
                 </button>
               </div>
             ) : data.myRequestStatus === 'pending' ? (
-              <div className="flex justify-center">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  className={cn(btnPrimary, 'h-[50px] w-full max-w-[360px] rounded-[10px] text-[15px] opacity-50')}
+                  className={cn(btnPrimary, 'h-[50px] rounded-[10px] text-[15px] opacity-50')}
                   disabled
                 >
                   {t('pets.detail.requestPendingForYou')}
+                </button>
+                <button
+                  type="button"
+                  className={cn(btnSecondary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}
+                  onClick={() => startChat(data.owner.id)}
+                >
+                  {t('pets.detail.startChat')}
                 </button>
               </div>
             ) : (
@@ -209,7 +226,7 @@ export default function PetDetailPage() {
                 <button
                   type="button"
                   className={cn(btnSecondary, focusRing, 'h-[50px] rounded-[10px] text-[15px]')}
-                  onClick={() => navigate(`/chat?to=${encodeURIComponent(data.owner.id)}`)}
+                  onClick={() => startChat(data.owner.id)}
                 >
                   {t('pets.detail.startChat')}
                 </button>

@@ -12,11 +12,18 @@ services:
       - '5432:5432'
     volumes:
       - diploma_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d pet_platform']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongo:
     image: mongo:7
     container_name: diploma-mongo
     restart: unless-stopped
+    # 4GB droplet дээр Mongo default cache (~1.4GB) OOM үүсгэж болно.
+    command: ['mongod', '--wiredTigerCacheSizeGB', '0.5']
     ports:
       - '27017:27017'
     volumes:

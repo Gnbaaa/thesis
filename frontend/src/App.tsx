@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Outlet, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -30,6 +30,7 @@ const VolunteerDetailPage = lazy(() => import('@/pages/volunteer/VolunteerDetail
 const DonationsListPage = lazy(() => import('@/pages/donations/DonationsListPage'));
 const DonationsAddPage = lazy(() => import('@/pages/donations/DonationsAddPage'));
 const DonationsDetailPage = lazy(() => import('@/pages/donations/DonationsDetailPage'));
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
 
 function AppLayout() {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/pets" replace />} />
+        <Route index element={<LandingPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
