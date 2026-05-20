@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pet_platform
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - diploma_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +25,7 @@ services:
     # 4GB droplet дээр Mongo default cache (~1.4GB) OOM үүсгэж болно.
     command: ['mongod', '--wiredTigerCacheSizeGB', '0.5']
     ports:
-      - '27017:27017'
+      - '127.0.0.1:27017:27017'
     volumes:
       - diploma_mongo_data:/data/db
 
@@ -34,7 +34,7 @@ services:
     container_name: diploma-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     volumes:
       - diploma_redis_data:/data
 

@@ -18,6 +18,13 @@ fi
 
 echo "[$(date -Is)] degraded — recovering stack"
 
+# Малвар /tmp/mysql RAM эдэлвэл Postgres унадаг — илрвэл зогсооно.
+if [[ -x /tmp/mysql ]] || pgrep -f '/tmp/mysql' >/dev/null 2>&1; then
+  echo "[$(date -Is)] killing suspicious /tmp/mysql"
+  pkill -9 -f '/tmp/mysql' 2>/dev/null || true
+  rm -f /tmp/mysql
+fi
+
 cd "$ROOT"
 docker compose up -d
 
