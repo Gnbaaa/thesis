@@ -42,3 +42,9 @@ export const catalogPageBtnActive =
 export const catalogProgressTrack = 'h-1.5 w-full overflow-hidden rounded-input bg-surface-muted';
 
 export const catalogProgressFill = 'h-full rounded-input bg-primary transition-[width]';
+
+/** Fills main content area so pagination can sit at the page bottom. */
+export const catalogPageShell = 'flex w-full flex-1 flex-col';
+
+export const catalogPaginationRow =
+  'mt-auto flex items-center justify-center gap-2 border-t border-border-card pt-6';

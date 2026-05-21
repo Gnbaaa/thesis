@@ -38,8 +38,8 @@ function AppLayout() {
   return (
     <>
       <AppNavbar />
-      <main className="min-h-[calc(100vh-4rem)] bg-surface">
-        <PageContainer className="mx-auto px-4 py-8 sm:px-6 md:py-10 lg:px-12">
+      <main className="flex min-h-[calc(100vh-4rem)] flex-col bg-surface">
+        <PageContainer className="mx-auto flex flex-1 flex-col px-4 py-8 sm:px-6 md:py-10 lg:px-12">
           <Suspense
             fallback={
               <div className="flex w-full max-w-md flex-col items-center justify-center gap-2 rounded-card border border-border-card bg-surface-card px-8 py-14">

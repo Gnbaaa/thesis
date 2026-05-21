@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { adminListNgoApplications, type AdminNgoApplicationStatus, type AdminNgoListResponse } from '@/features/admin/adminNgoApi';
 import { CenteredPage } from '@/components/layout/CenteredPage';
 import { Badge } from '@/components/ui/Badge';
+import { catalogPaginationRow } from '@/lib/catalogStyles';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
 
@@ -47,7 +48,7 @@ export default function AdminNgoApplicationsPage() {
   }, [query.data?.total]);
 
   return (
-    <CenteredPage maxWidth="2xl">
+    <CenteredPage maxWidth="2xl" className="flex flex-1 flex-col">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-text-heading">{t('admin.ngo.title')}</h1>
@@ -144,7 +145,7 @@ export default function AdminNgoApplicationsPage() {
         </table>
       </div>
 
-      <div className="mt-6 flex items-center justify-center gap-2">
+      <div className={catalogPaginationRow}>
         <button
           type="button"
           className={cn(

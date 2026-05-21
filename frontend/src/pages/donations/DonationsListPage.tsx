@@ -14,6 +14,8 @@ import {
   catalogFocus,
   catalogPageBtn,
   catalogPageBtnActive,
+  catalogPageShell,
+  catalogPaginationRow,
   catalogProgressFill,
   catalogProgressTrack,
   catalogSearchGrow,
@@ -70,8 +72,7 @@ export default function DonationsListPage() {
   }, [query.data?.total]);
 
   return (
-    <div className="w-full">
-      <div className="flex min-h-[60vh] flex-col">
+    <div className={catalogPageShell}>
         <div className={catalogSearchRow}>
           <input
             value={q}
@@ -170,7 +171,7 @@ export default function DonationsListPage() {
           )}
         </div>
 
-        <div className="mt-auto flex items-center justify-center gap-2 pt-10">
+        <div className={catalogPaginationRow}>
           <button
             type="button"
             className={cn(catalogPageBtn, catalogFocus)}
@@ -202,7 +203,6 @@ export default function DonationsListPage() {
             &rsaquo;
           </button>
         </div>
-      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { CenteredPage } from '@/components/layout/CenteredPage';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { getAuthUserId } from '@/lib/authSession';
+import { catalogPaginationRow } from '@/lib/catalogStyles';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
 
@@ -115,7 +116,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <CenteredPage maxWidth="2xl">
+    <CenteredPage maxWidth="2xl" className="flex flex-1 flex-col">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">
           {t('adminUsers.title')}
@@ -235,7 +236,7 @@ export default function AdminUsersPage() {
       </div>
 
       {totalPages > 1 ? (
-        <div className="mt-5 flex items-center justify-center gap-2 text-sm text-text-muted">
+        <div className={cn(catalogPaginationRow, 'text-sm text-text-muted')}>
           <span>{t('adminUsers.pageLabel')}</span>
           <button
             type="button"
