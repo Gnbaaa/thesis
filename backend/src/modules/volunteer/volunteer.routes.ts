@@ -19,7 +19,7 @@ router.get('/:id', authOptional, validateParams(volunteerPostIdParams), ctrl.get
 router.post(
   '/',
   authRequired,
-  requireRole('ngo', 'admin'),
+  requireRole('ngo'),
   validateBody(createVolunteerPostBody),
   ctrl.create,
 );

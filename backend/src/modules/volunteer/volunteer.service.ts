@@ -34,8 +34,12 @@ export async function listVolunteerPosts(query: VolunteerPostListQuery) {
  */
 export async function getOwnerActivityReport(
   ownerId: string,
+  range?: { from?: string; to?: string },
 ): Promise<OwnerVolunteerActivityReport> {
-  return await repo.getOwnerVolunteerActivityReport(ownerId, { recentLimit: 20 });
+  return await repo.getOwnerVolunteerActivityReport(ownerId, {
+    recentLimit: range ? 200 : 20,
+    range,
+  });
 }
 
 export async function getVolunteerPostById(id: string, viewerId: string | null = null) {

@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { HandHeart } from 'lucide-react';
 import {
-  createVolunteerPost,
+  getVolunteerPost,
+  updateVolunteerPost,
   uploadVolunteerImage,
   type CreateVolunteerPostRequest,
+  type VolunteerPostDetail,
+  type VolunteerPostStatus,
 } from '@/features/volunteer/volunteerApi';
-import { HandHeart } from 'lucide-react';
 import { CenteredPage } from '@/components/layout/CenteredPage';
 import { ListingFormField } from '@/components/forms/ListingFormField';
 import { ListingFormHeader } from '@/components/forms/ListingFormHeader';
@@ -22,10 +25,11 @@ import {
   listingFormInner,
   listingFormStack,
   listingInputClass,
+  listingSelectClass,
   listingTextareaClass,
 } from '@/components/forms/listingFormStyles';
 import { Button } from '@/components/ui/Button';
-import { getAuthRole, useIsLoggedIn } from '@/lib/authSession';
+import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
 
@@ -37,6 +41,7 @@ type FormValues = {
   location: string;
   eventDate: string;
   requiredCount: string;
+  status: VolunteerPostStatus;
 };
 
 function useFormSchema() {
@@ -66,30 +71,48 @@ function useFormSchema() {
             const n = parseInt(s.trim(), 10);
             return n >= 1 && n <= 10000;
           }, t('volunteer.create.errors.requiredCount')),
+        status: z.enum(['active', 'completed']),
       }),
     [t],
   );
 }
 
-function mapFormToRequest(values: FormValues, photoId: string | null): CreateVolunteerPostRequest {
+function mapDetailToForm(post: VolunteerPostDetail): FormValues {
+  return {
+    title: post.title ?? '',
+    description: post.description ?? '',
+    location: post.location ?? '',
+    eventDate: post.eventDate?.slice(0, 10) ?? '',
+    requiredCount: String(post.requiredCount ?? ''),
+    status: post.status,
+  };
+}
+
+function mapFormToRequest(
+  values: FormValues,
+  photoId: string | null | undefined,
+): CreateVolunteerPostRequest {
   return {
     title: values.title.trim(),
     description: values.description.trim(),
     location: values.location.trim(),
     eventDate: values.eventDate,
     requiredCount: parseInt(values.requiredCount.trim(), 10),
-    photoPublicId: photoId,
+    status: values.status,
+    photoPublicId: photoId ?? null,
   };
 }
 
-export default function VolunteerAddPage() {
+export default function VolunteerEditPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const postId = typeof id === 'string' ? id : '';
   const schema = useFormSchema();
   const fileRef = useRef<HTMLInputElement>(null);
   const loggedIn = useIsLoggedIn();
-  const role = loggedIn ? getAuthRole() : null;
-  const canCreate = role === 'ngo';
+  const myId = getAuthUserId();
+
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -104,9 +127,18 @@ export default function VolunteerAddPage() {
     };
   }, [previewUrl]);
 
+  const postQuery = useQuery({
+    queryKey: ['volunteer', 'detail', postId],
+    queryFn: () => getVolunteerPost(postId),
+    enabled: Boolean(postId),
+  });
+
+  const displayPreviewUrl = previewUrl ?? postQuery.data?.photoUrl ?? null;
+
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -116,8 +148,14 @@ export default function VolunteerAddPage() {
       location: '',
       eventDate: '',
       requiredCount: '',
+      status: 'active',
     },
   });
+
+  useEffect(() => {
+    if (!postQuery.data) return;
+    reset(mapDetailToForm(postQuery.data));
+  }, [postQuery.data, reset]);
 
   const setSelectedFile = (f: File | null) => {
     setFileError(null);
@@ -154,22 +192,22 @@ export default function VolunteerAddPage() {
 
   const mutation = useMutation({
     mutationFn: async (p: { values: FormValues }) => {
-      let photoId: string | null = null;
+      let photoId: string | null | undefined = postQuery.data?.photoPublicId ?? null;
       if (file) {
         const up = await uploadVolunteerImage(file);
         photoId = up.publicId;
       }
-      return createVolunteerPost(mapFormToRequest(p.values, photoId));
+      return updateVolunteerPost(postId, mapFormToRequest(p.values, photoId));
     },
     onSuccess: () => {
-      navigate('/volunteer');
+      navigate(`/volunteer/${postId}`);
     },
   });
 
   if (!loggedIn) {
     return (
       <CenteredPage maxWidth="form">
-        <ListingFormHeader backTo="/volunteer" backLabel={t('volunteer.create.back')} />
+        <ListingFormHeader backTo={`/volunteer/${postId}`} backLabel={t('volunteer.edit.back')} />
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
           {t('volunteer.create.loginRequired')}{' '}
           <Link to="/login" className="font-medium text-accent underline">
@@ -180,25 +218,45 @@ export default function VolunteerAddPage() {
     );
   }
 
-  if (!canCreate) {
+  if (postQuery.isLoading) {
     return (
       <CenteredPage maxWidth="form">
-        <ListingFormHeader backTo="/volunteer" backLabel={t('volunteer.create.back')} />
+        <p className="text-sm text-text-muted">{t('common.loading')}</p>
+      </CenteredPage>
+    );
+  }
+
+  if (postQuery.isError || !postQuery.data) {
+    return (
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/volunteer" backLabel={t('volunteer.edit.back')} />
         <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
-          {t('volunteer.create.roleRequired')}
+          {t('volunteer.detail.loadFailed')}
         </p>
       </CenteredPage>
     );
   }
 
-  const onSubmit = (values: FormValues) => {
+  const isOwner = Boolean(postQuery.data.owner.id && myId && postQuery.data.owner.id === myId);
+  if (!isOwner) {
+    return (
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo={`/volunteer/${postId}`} backLabel={t('volunteer.edit.back')} />
+        <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
+          {t('volunteer.edit.forbidden')}
+        </p>
+      </CenteredPage>
+    );
+  }
+
+  const onSave = (values: FormValues) => {
     mutation.mutate({ values });
   };
 
   return (
     <ListingFormShell
-      backTo="/volunteer"
-      backLabel={t('volunteer.create.back')}
+      backTo={`/volunteer/${postId}`}
+      backLabel={t('volunteer.edit.back')}
       panelTitle={t('volunteer.create.panelTitle')}
       tips={tips}
       icon={HandHeart}
@@ -206,7 +264,7 @@ export default function VolunteerAddPage() {
       <form className={listingFormInner} onSubmit={(e) => e.preventDefault()} noValidate>
         {mutation.isError ? (
           <p className={cn('mb-4', alertError)} role="alert">
-            {t('volunteer.create.submitError')}
+            {t('volunteer.edit.submitError')}
           </p>
         ) : null}
 
@@ -245,25 +303,33 @@ export default function VolunteerAddPage() {
             </ListingFormField>
           </div>
 
-          <ListingFormField
-            label={t('volunteer.create.fields.requiredCount')}
-            error={errors.requiredCount?.message}
-          >
-            <input
-              type="text"
-              {...register('requiredCount')}
-              className={cn(listingInputClass, focusRing)}
-              placeholder={t('volunteer.create.fields.requiredCountPh')}
-              inputMode="numeric"
-            />
-          </ListingFormField>
+          <div className={listingFormGrid2}>
+            <ListingFormField
+              label={t('volunteer.create.fields.requiredCount')}
+              error={errors.requiredCount?.message}
+            >
+              <input
+                type="text"
+                {...register('requiredCount')}
+                className={cn(listingInputClass, focusRing)}
+                placeholder={t('volunteer.create.fields.requiredCountPh')}
+                inputMode="numeric"
+              />
+            </ListingFormField>
+            <ListingFormField label={t('volunteer.create.fields.status')} error={errors.status?.message}>
+              <select {...register('status')} className={cn(listingSelectClass, focusRing)}>
+                <option value="active">{t('volunteer.status.active')}</option>
+                <option value="completed">{t('volunteer.status.completed')}</option>
+              </select>
+            </ListingFormField>
+          </div>
 
           <PhotoUploadZone
             label={t('volunteer.create.fields.photo')}
             dropHint={t('volunteer.create.fields.photoDrop')}
             typesHint={t('volunteer.create.fields.photoTypes')}
             chooseLabel={t('volunteer.create.fields.chooseFile')}
-            previewUrl={previewUrl}
+            previewUrl={displayPreviewUrl}
             fileName={file?.name ?? null}
             fileError={fileError}
             fileRef={fileRef}
@@ -274,11 +340,14 @@ export default function VolunteerAddPage() {
         </div>
 
         <div className={listingActionsClass}>
-          <Button type="button" variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            {t('volunteer.create.actions.cancel')}
-          </Button>
-          <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSubmit)}>
-            {mutation.isPending ? t('common.loading') : t('volunteer.create.actions.publish')}
+          <Link
+            to={`/volunteer/${postId}`}
+            className="inline-flex h-9 items-center justify-center rounded-input px-3 text-sm font-medium text-secondary-fg transition-colors hover:bg-surface-hover hover:text-text-heading"
+          >
+            {t('volunteer.edit.cancel')}
+          </Link>
+          <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit(onSave)}>
+            {mutation.isPending ? t('common.loading') : t('volunteer.edit.save')}
           </Button>
         </div>
       </form>

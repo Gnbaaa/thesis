@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { adminListNgoApplications, type AdminNgoApplicationStatus, type AdminNgoListResponse } from '@/features/admin/adminNgoApi';
 import { CenteredPage } from '@/components/layout/CenteredPage';
 import { Badge } from '@/components/ui/Badge';
+import { ScrollTable } from '@/components/ui/ScrollTable';
 import { catalogPaginationRow } from '@/lib/catalogStyles';
 import { cn } from '@/lib/cn';
 import { focusRing } from '@/lib/uiClasses';
@@ -92,15 +93,16 @@ export default function AdminNgoApplicationsPage() {
       </div>
 
       <div className="mt-5 overflow-hidden rounded-card border border-border-card bg-surface-card">
-        <table className="w-full table-fixed">
+        <ScrollTable minWidth={720}>
+        <table className="w-full">
           <thead className="border-b border-border-card bg-surface-muted">
             <tr className="text-left text-xs font-semibold text-text-muted">
-              <th className="w-[56px] px-4 py-3">№</th>
+              <th className="px-4 py-3">№</th>
               <th className="px-4 py-3">{t('admin.ngo.cols.requester')}</th>
               <th className="px-4 py-3">{t('admin.ngo.cols.org')}</th>
-              <th className="w-[140px] px-4 py-3">{t('admin.ngo.cols.date')}</th>
-              <th className="w-[160px] px-4 py-3">{t('admin.ngo.cols.status')}</th>
-              <th className="w-[140px] px-4 py-3">{t('admin.ngo.cols.action')}</th>
+              <th className="px-4 py-3">{t('admin.ngo.cols.date')}</th>
+              <th className="px-4 py-3">{t('admin.ngo.cols.status')}</th>
+              <th className="px-4 py-3">{t('admin.ngo.cols.action')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-card text-sm">
@@ -143,6 +145,7 @@ export default function AdminNgoApplicationsPage() {
             )}
           </tbody>
         </table>
+        </ScrollTable>
       </div>
 
       <div className={catalogPaginationRow}>

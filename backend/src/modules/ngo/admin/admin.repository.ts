@@ -170,6 +170,45 @@ export async function updateApplicationStatus(params: {
          WHERE id = $1`,
         [updated.userId],
       );
+
+      await client.query(
+        `
+        INSERT INTO ngos (
+          owner_id,
+          application_id,
+          org_name,
+          reg_number,
+          org_address,
+          activity_direction,
+          contact_phone,
+          contact_email,
+          description,
+          document_public_id,
+          document_resource_type,
+          document_format,
+          document_original_name,
+          document_bytes
+        )
+        SELECT
+          user_id,
+          id,
+          org_name,
+          reg_number,
+          org_address,
+          activity_direction,
+          contact_phone,
+          contact_email,
+          description,
+          document_public_id,
+          document_resource_type,
+          document_format,
+          document_original_name,
+          document_bytes
+        FROM ngo_applications
+        WHERE id = $1
+        `,
+        [params.id],
+      );
     }
 
     await client.query('COMMIT');

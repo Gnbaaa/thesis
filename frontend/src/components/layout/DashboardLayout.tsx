@@ -26,14 +26,17 @@ export function DashboardLayout({ children }: Props) {
   return (
     <CenteredPage maxWidth="2xl">
       <div className="grid grid-cols-1 overflow-hidden rounded-shell border border-border-card bg-surface-card shadow-sm md:grid-cols-[240px_1fr]">
-        <aside className="border-b border-border-card bg-surface px-4 py-5 md:border-b-0 md:border-r">
-          <nav className="grid gap-1" aria-label={t('dashboard.user.title')}>
+        <aside className="border-b border-border-card bg-surface px-3 py-3 md:border-b-0 md:border-r md:px-4 md:py-5">
+          <nav
+            className="flex gap-2 overflow-x-auto pb-0.5 md:grid md:gap-1 md:overflow-visible md:pb-0"
+            aria-label={t('dashboard.user.title')}
+          >
             {items.map((it) => (
               <Link
                 key={it.to}
                 to={it.to}
                 className={cn(
-                  'rounded-input px-3 py-2.5 text-sm no-underline hover:no-underline',
+                  'shrink-0 rounded-input px-3 py-2.5 text-sm no-underline hover:no-underline md:shrink',
                   focusRing,
                   it.active
                     ? 'bg-success-surface font-semibold text-success-text'
@@ -46,7 +49,7 @@ export function DashboardLayout({ children }: Props) {
           </nav>
         </aside>
 
-        <div className="min-w-0 bg-surface px-5 py-7 md:px-8 md:py-8">{children}</div>
+        <div className="min-w-0 bg-surface px-4 py-6 sm:px-5 md:px-8 md:py-8">{children}</div>
       </div>
     </CenteredPage>
   );

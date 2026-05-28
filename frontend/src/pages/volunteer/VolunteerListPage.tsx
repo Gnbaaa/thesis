@@ -34,7 +34,7 @@ export default function VolunteerListPage() {
   const { t } = useTranslation();
   const loggedIn = useIsLoggedIn();
   const role = loggedIn ? getAuthRole() : null;
-  const canCreate = role === 'ngo' || role === 'admin';
+  const canCreate = role === 'ngo';
 
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<'all' | VolunteerPostStatus>('all');

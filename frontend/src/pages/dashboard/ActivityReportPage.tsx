@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -9,10 +9,18 @@ import {
   type PetSpecies,
   type VolunteerPostStatus,
 } from '@/features/reports/reportsApi';
+import {
+  defaultExportDateRange,
+  exportActivityReportPdf,
+} from '@/features/reports/exportActivityReportPdf';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ScrollTable } from '@/components/ui/ScrollTable';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { getAuthRole } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
+import { listingInputClass } from '@/components/forms/listingFormStyles';
 
 type TabId = 'donations' | 'pets' | 'volunteer';
 
@@ -70,11 +78,17 @@ function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
 export default function ActivityReportPage() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabId>('donations');
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const defaultRange = useMemo(() => defaultExportDateRange(), []);
+  const [exportFrom, setExportFrom] = useState(defaultRange.from);
+  const [exportTo, setExportTo] = useState(defaultRange.to);
   const role = getAuthRole();
 
   const query = useQuery({
     queryKey: ['dashboard', 'reports'],
-    queryFn: getActivityReport,
+    queryFn: () => getActivityReport(),
     staleTime: 30_000,
     enabled: role === 'ngo',
   });
@@ -87,11 +101,94 @@ export default function ActivityReportPage() {
   const pets = query.data?.pets;
   const volunteer = query.data?.volunteer;
 
+  async function handleExportPdf() {
+    if (exportFrom > exportTo) {
+      setExportError(t('dashboard.reports.exportRangeInvalid'));
+      return;
+    }
+
+    setExporting(true);
+    setExportError(null);
+    try {
+      const data = await getActivityReport({ from: exportFrom, to: exportTo });
+      await exportActivityReportPdf({ tab, data, from: exportFrom, to: exportTo, t });
+      setExportOpen(false);
+    } catch {
+      setExportError(t('dashboard.reports.exportFailed'));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <DashboardLayout>
-      <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">
-        {t('dashboard.reports.title')}
-      </h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="font-serif text-2xl font-semibold leading-tight text-text-heading">
+          {t('dashboard.reports.title')}
+        </h1>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          disabled={query.isLoading}
+          onClick={() => {
+            setExportError(null);
+            setExportFrom(defaultRange.from);
+            setExportTo(defaultRange.to);
+            setExportOpen(true);
+          }}
+        >
+          {t('dashboard.reports.export')}
+        </Button>
+      </div>
+
+      <Modal
+        open={exportOpen}
+        onClose={() => !exporting && setExportOpen(false)}
+        title={t('dashboard.reports.exportTitle')}
+      >
+        <div className="grid gap-4 px-5 py-4">
+          <p className="text-sm text-text-secondary">
+            {t(`dashboard.reports.tabs.${tab}`)} — {t('dashboard.reports.exportRange', { from: exportFrom, to: exportTo })}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-text-secondary">{t('dashboard.reports.exportFrom')}</span>
+              <input
+                type="date"
+                value={exportFrom}
+                onChange={(e) => setExportFrom(e.target.value)}
+                disabled={exporting}
+                className={cn(listingInputClass, focusRing)}
+              />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-medium text-text-secondary">{t('dashboard.reports.exportTo')}</span>
+              <input
+                type="date"
+                value={exportTo}
+                onChange={(e) => setExportTo(e.target.value)}
+                disabled={exporting}
+                className={cn(listingInputClass, focusRing)}
+              />
+            </label>
+          </div>
+          {exportError ? (
+            <p className={cn(alertError, 'text-sm')} role="alert">
+              {exportError}
+            </p>
+          ) : null}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" disabled={exporting} onClick={() => setExportOpen(false)}>
+              {t('dashboard.reports.exportCancel')}
+            </Button>
+            <Button type="button" disabled={exporting} onClick={() => void handleExportPdf()}>
+              {exporting ? t('dashboard.reports.exporting') : t('dashboard.reports.exportAction')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
           {query.isError ? (
             <p className={cn(alertError, 'mt-4')} role="alert">
@@ -99,14 +196,15 @@ export default function ActivityReportPage() {
             </p>
           ) : null}
 
-          <div className="mt-6 flex w-full border-b-2 border-border-card">
+          <div className="mt-6 overflow-x-auto">
+            <div className="flex min-w-max border-b-2 border-border-card">
             {(['donations', 'pets', 'volunteer'] as TabId[]).map((id) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setTab(id)}
                 className={cn(
-                  'relative px-6 py-3 text-sm transition-colors',
+                  'relative shrink-0 px-4 py-3 text-sm transition-colors sm:px-6',
                   focusRing,
                   tab === id
                     ? 'font-semibold text-text-heading'
@@ -119,11 +217,12 @@ export default function ActivityReportPage() {
                 ) : null}
               </button>
             ))}
+            </div>
           </div>
 
           {tab === 'donations' ? (
             <div className="mt-6">
-              <div className="flex flex-col gap-4 md:flex-row">
+              <div className="flex flex-col gap-4 sm:grid sm:grid-cols-2 lg:flex lg:flex-row">
                 <StatCard
                   label={t('dashboard.reports.donations.cards.totalCollected')}
                   value={formatMnt(donations?.totalCollected ?? 0)}
@@ -153,20 +252,21 @@ export default function ActivityReportPage() {
                     {t('dashboard.reports.donations.tableTitle')}
                   </p>
                 </div>
-                <table className="w-full table-fixed">
+                <ScrollTable minWidth={760}>
+                <table className="w-full">
                   <thead className="border-b border-border-card bg-surface-muted">
                     <tr className="text-left text-xs font-semibold text-text-muted">
-                      <th className="px-6 py-3 w-[140px]">
+                      <th className="px-4 py-3 sm:px-6">
                         {t('dashboard.reports.donations.cols.date')}
                       </th>
                       <th className="px-4 py-3">{t('dashboard.reports.donations.cols.post')}</th>
-                      <th className="px-4 py-3 w-[140px] text-right">
+                      <th className="px-4 py-3 text-right">
                         {t('dashboard.reports.donations.cols.amount')}
                       </th>
-                      <th className="px-4 py-3 w-[140px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.donations.cols.status')}
                       </th>
-                      <th className="px-4 py-3 w-[200px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.donations.cols.ref')}
                       </th>
                     </tr>
@@ -222,13 +322,14 @@ export default function ActivityReportPage() {
                     )}
                   </tbody>
                 </table>
+                </ScrollTable>
               </div>
             </div>
           ) : null}
 
           {tab === 'pets' ? (
             <div className="mt-6">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                 <StatCard
                   label={t('dashboard.reports.pets.cards.total')}
                   value={String(pets?.totalCount ?? 0)}
@@ -253,17 +354,18 @@ export default function ActivityReportPage() {
                     {t('dashboard.reports.pets.tableTitle')}
                   </p>
                 </div>
-                <table className="w-full table-fixed">
+                <ScrollTable minWidth={560}>
+                <table className="w-full">
                   <thead className="border-b border-border-card bg-surface-muted">
                     <tr className="text-left text-xs font-semibold text-text-muted">
-                      <th className="px-6 py-3">{t('dashboard.reports.pets.cols.name')}</th>
-                      <th className="px-4 py-3 w-[120px]">
+                      <th className="px-4 py-3 sm:px-6">{t('dashboard.reports.pets.cols.name')}</th>
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.pets.cols.species')}
                       </th>
-                      <th className="px-4 py-3 w-[140px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.pets.cols.status')}
                       </th>
-                      <th className="px-4 py-3 w-[140px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.pets.cols.date')}
                       </th>
                     </tr>
@@ -311,13 +413,14 @@ export default function ActivityReportPage() {
                     )}
                   </tbody>
                 </table>
+                </ScrollTable>
               </div>
             </div>
           ) : null}
 
           {tab === 'volunteer' ? (
             <div className="mt-6">
-              <div className="flex flex-col gap-4 md:flex-row">
+              <div className="flex flex-col gap-4 sm:grid sm:grid-cols-2 lg:flex lg:flex-row">
                 <StatCard
                   label={t('dashboard.reports.volunteer.cards.total')}
                   value={String(volunteer?.totalPosts ?? 0)}
@@ -338,20 +441,21 @@ export default function ActivityReportPage() {
                     {t('dashboard.reports.volunteer.tableTitle')}
                   </p>
                 </div>
-                <table className="w-full table-fixed">
+                <ScrollTable minWidth={720}>
+                <table className="w-full">
                   <thead className="border-b border-border-card bg-surface-muted">
                     <tr className="text-left text-xs font-semibold text-text-muted">
-                      <th className="px-6 py-3">{t('dashboard.reports.volunteer.cols.title')}</th>
-                      <th className="px-4 py-3 w-[160px]">
+                      <th className="px-4 py-3 sm:px-6">{t('dashboard.reports.volunteer.cols.title')}</th>
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.volunteer.cols.location')}
                       </th>
-                      <th className="px-4 py-3 w-[120px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.volunteer.cols.eventDate')}
                       </th>
-                      <th className="px-4 py-3 w-[140px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.volunteer.cols.registered')}
                       </th>
-                      <th className="px-4 py-3 w-[140px]">
+                      <th className="px-4 py-3">
                         {t('dashboard.reports.volunteer.cols.status')}
                       </th>
                     </tr>
@@ -405,6 +509,7 @@ export default function ActivityReportPage() {
                     )}
                   </tbody>
                 </table>
+                </ScrollTable>
               </div>
             </div>
           ) : null}

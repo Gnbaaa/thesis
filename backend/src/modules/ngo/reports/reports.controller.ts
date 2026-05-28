@@ -2,24 +2,16 @@ import type { Request, Response } from 'express';
 import * as donationsSvc from '../../donations/donations.service';
 import * as petsSvc from '../../pets/pets.service';
 import * as volunteerSvc from '../../volunteer/volunteer.service';
+import type { ReportsQuery } from './reports.schema';
 
-/**
- * UC-014: Үйл ажиллагааны тайлан.
- *
- * Нэвтэрсэн хэрэглэгчийн өөрийн зарууд (амьтны, хандивын, сайн дурын) дээрх
- * статистик болон сүүлийн идэвхийг хамтад нь буцаана. Frontend нь нэг хүсэлтээр
- * гурван tab-ын мэдээллийг авч cache-лнэ.
- *
- * Архитектурын дагуу энэхүү controller нь өөрийн модулийн дотоод хүснэгтэд
- * шууд хандахгүй — гурван өмчилөгч модулийн `service`-ээр дамжуулан мэдээллийг
- * хүлээж авна.
- */
 export async function getReports(req: Request, res: Response) {
+  const q = (req as Request & { validatedQuery?: unknown }).validatedQuery as ReportsQuery;
   const ownerId = req.user!.id;
+  const range = q.from || q.to ? { from: q.from, to: q.to } : undefined;
   const [donations, pets, volunteer] = await Promise.all([
-    donationsSvc.getOwnerActivityReport(ownerId),
-    petsSvc.getOwnerActivityReport(ownerId),
-    volunteerSvc.getOwnerActivityReport(ownerId),
+    donationsSvc.getOwnerActivityReport(ownerId, range),
+    petsSvc.getOwnerActivityReport(ownerId, range),
+    volunteerSvc.getOwnerActivityReport(ownerId, range),
   ]);
   res.json({ donations, pets, volunteer });
 }

@@ -1,5 +1,7 @@
 import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
+import type { DateRangeFilter } from '../../shared/dateRangeSql';
+import { appendDateRange } from '../../shared/dateRangeSql';
 import type {
   CreateVolunteerPostInput,
   OwnerVolunteerActivityItem,
@@ -72,6 +74,7 @@ function mapDetailRow(r: DetailRow): VolunteerPostDetail {
   return {
     ...mapListRow(r),
     photoUrl: safePhotoUrl(r.photo_public_id, 1200),
+    photoPublicId: r.photo_public_id,
     updatedAt: r.updated_at,
     owner: {
       id: r.owner_id,
@@ -231,32 +234,47 @@ export async function findVolunteerPostOwnerId(id: string): Promise<string | nul
  */
 export async function getOwnerVolunteerActivityReport(
   ownerId: string,
-  options?: { recentLimit?: number },
+  options?: { recentLimit?: number; range?: DateRangeFilter },
 ): Promise<OwnerVolunteerActivityReport> {
   const pool = getPool();
-  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 100);
+  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 200);
+  const range = options?.range;
 
-  const statsRes = await pool.query<{
-    total_posts: string;
-    active_count: string;
-    total_registrations: string;
-  }>(
+  const statsValues: unknown[] = [ownerId];
+  const postRangeSql = appendDateRange('created_at', range, statsValues);
+
+  const postsStatsRes = await pool.query<{ total_posts: string; active_count: string }>(
     `
     SELECT
       COUNT(*)::text AS total_posts,
-      COUNT(*) FILTER (WHERE status = 'active')::text AS active_count,
-      COALESCE((
-        SELECT COUNT(*)::text
-        FROM volunteer_registrations r
-        INNER JOIN volunteer_posts p2 ON p2.id = r.post_id
-        WHERE p2.owner_id = $1
-      ), '0') AS total_registrations
+      COUNT(*) FILTER (WHERE status = 'active')::text AS active_count
     FROM volunteer_posts
-    WHERE owner_id = $1
+    WHERE owner_id = $1${postRangeSql}
     `,
-    [ownerId],
+    statsValues,
   );
-  const s = statsRes.rows[0] ?? { total_posts: '0', active_count: '0', total_registrations: '0' };
+
+  const regValues: unknown[] = [ownerId];
+  const regRangeSql = appendDateRange('r.created_at', range, regValues);
+  const regStatsRes = await pool.query<{ total_registrations: string }>(
+    `
+    SELECT COUNT(*)::text AS total_registrations
+    FROM volunteer_registrations r
+    INNER JOIN volunteer_posts p2 ON p2.id = r.post_id
+    WHERE p2.owner_id = $1${regRangeSql}
+    `,
+    regValues,
+  );
+
+  const s = {
+    total_posts: postsStatsRes.rows[0]?.total_posts ?? '0',
+    active_count: postsStatsRes.rows[0]?.active_count ?? '0',
+    total_registrations: regStatsRes.rows[0]?.total_registrations ?? '0',
+  };
+
+  const recentValues: unknown[] = [ownerId];
+  const recentRangeSql = appendDateRange('p.created_at', range, recentValues);
+  recentValues.push(limit);
 
   const recentRes = await pool.query<{
     id: string;
@@ -281,11 +299,11 @@ export async function getOwnerVolunteerActivityReport(
         SELECT COUNT(*)::text FROM volunteer_registrations r WHERE r.post_id = p.id
       ), '0') AS registered_count
     FROM volunteer_posts p
-    WHERE p.owner_id = $1
+    WHERE p.owner_id = $1${recentRangeSql}
     ORDER BY p.created_at DESC
-    LIMIT $2
+    LIMIT $${recentValues.length}
     `,
-    [ownerId, limit],
+    recentValues,
   );
 
   const recent: OwnerVolunteerActivityItem[] = recentRes.rows.map((r) => ({

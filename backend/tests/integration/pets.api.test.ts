@@ -109,4 +109,36 @@ describe('pets API', () => {
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('PET_EDIT_FORBIDDEN');
   });
+
+  it('DELETE /api/v1/pets/:id requires authentication', async () => {
+    const res = await request(app).delete('/api/v1/pets/00000000-0000-4000-8000-000000000001');
+    expect(res.status).toBe(401);
+  });
+
+  it('DELETE /api/v1/pets/:id maps forbidden for non-owner', async () => {
+    mockPets.deletePet.mockRejectedValue(
+      new ForbiddenError('Та энэ амьтны зарыг устгах эрхгүй байна.', 'PET_DELETE_FORBIDDEN'),
+    );
+
+    const res = await request(app)
+      .delete('/api/v1/pets/00000000-0000-4000-8000-000000000001')
+      .set('Authorization', bearerToken());
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('PET_DELETE_FORBIDDEN');
+  });
+
+  it('DELETE /api/v1/pets/:id deletes listing for owner', async () => {
+    mockPets.deletePet.mockResolvedValue(undefined);
+
+    const res = await request(app)
+      .delete('/api/v1/pets/00000000-0000-4000-8000-000000000001')
+      .set('Authorization', bearerToken());
+
+    expect(res.status).toBe(204);
+    expect(mockPets.deletePet).toHaveBeenCalledWith({
+      petId: '00000000-0000-4000-8000-000000000001',
+      ownerId: expect.any(String),
+    });
+  });
 });

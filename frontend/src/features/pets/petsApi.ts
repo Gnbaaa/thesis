@@ -101,6 +101,10 @@ export async function updatePet(id: string, body: CreatePetRequest): Promise<{ i
   return data;
 }
 
+export async function deletePet(id: string): Promise<void> {
+  await api.delete(`/api/v1/pets/${encodeURIComponent(id)}`);
+}
+
 export type UploadImageResponse = {
   publicId: string;
   url: string;

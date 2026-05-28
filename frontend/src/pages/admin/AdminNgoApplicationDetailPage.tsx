@@ -76,7 +76,7 @@ export default function AdminNgoApplicationDetailPage() {
         ← {t('admin.ngo.backToList')}
       </Link>
 
-      <div className="mt-3 flex items-start justify-between gap-4">
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="font-serif text-2xl font-semibold text-text-heading">{t('admin.ngo.detail.title')}</h1>
         {app ? <Badge variant={statusBadgeVariant(app.status)}>{statusLabel(app.status, t)}</Badge> : null}
       </div>

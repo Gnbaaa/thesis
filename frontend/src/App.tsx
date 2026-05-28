@@ -27,6 +27,7 @@ const NotificationsPage = lazy(() => import('@/pages/notifications/Notifications
 const VolunteerListPage = lazy(() => import('@/pages/volunteer/VolunteerListPage'));
 const VolunteerAddPage = lazy(() => import('@/pages/volunteer/VolunteerAddPage'));
 const VolunteerDetailPage = lazy(() => import('@/pages/volunteer/VolunteerDetailPage'));
+const VolunteerEditPage = lazy(() => import('@/pages/volunteer/VolunteerEditPage'));
 const DonationsListPage = lazy(() => import('@/pages/donations/DonationsListPage'));
 const DonationsAddPage = lazy(() => import('@/pages/donations/DonationsAddPage'));
 const DonationsDetailPage = lazy(() => import('@/pages/donations/DonationsDetailPage'));
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="donations/:id" element={<DonationsDetailPage />} />
         <Route path="volunteer" element={<VolunteerListPage />} />
         <Route path="volunteer/new" element={<VolunteerAddPage />} />
+        <Route path="volunteer/:id/edit" element={<VolunteerEditPage />} />
         <Route path="volunteer/:id" element={<VolunteerDetailPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="notifications" element={<NotificationsPage />} />

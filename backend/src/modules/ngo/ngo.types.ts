@@ -32,3 +32,23 @@ export type CreateNgoApplicationInput = {
   description?: string;
 };
 
+export type Ngo = {
+  id: string;
+  ownerId: string;
+  applicationId: string;
+  orgName: string;
+  regNumber: string;
+  orgAddress: string;
+  activityDirection: string;
+  contactPhone: string;
+  contactEmail: string;
+  description: string | null;
+  documentPublicId: string;
+  documentResourceType: 'image' | 'raw';
+  documentFormat: string | null;
+  documentOriginalName: string | null;
+  documentBytes: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+

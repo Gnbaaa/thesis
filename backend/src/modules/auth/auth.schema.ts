@@ -10,9 +10,9 @@ const password = z
 export const registerBody = z.object({
   email,
   password,
-  firstName: z.string().max(120, 'Нэр хэт урт байна').optional().default(''),
-  lastName: z.string().max(120, 'Овог хэт урт байна').optional().default(''),
-  phone: z.string().max(32, 'Утасны дугаар хэт урт байна').optional(),
+  firstName: z.string().max(40, 'Нэр хэт урт байна').optional().default(''),
+  lastName: z.string().max(40, 'Овог хэт урт байна').optional().default(''),
+  phone: z.string().max(8, 'Утасны дугаар хэт урт байна').optional(),
 });
 
 export const loginBody = z.object({

@@ -65,7 +65,15 @@ export type ActivityReportResponse = {
   volunteer: OwnerVolunteerActivityReport;
 };
 
-export async function getActivityReport(): Promise<ActivityReportResponse> {
-  const { data } = await api.get<ActivityReportResponse>('/api/v1/ngo/reports');
+export async function getActivityReport(params?: {
+  from?: string;
+  to?: string;
+}): Promise<ActivityReportResponse> {
+  const { data } = await api.get<ActivityReportResponse>('/api/v1/ngo/reports', {
+    params: {
+      from: params?.from || undefined,
+      to: params?.to || undefined,
+    },
+  });
   return data;
 }

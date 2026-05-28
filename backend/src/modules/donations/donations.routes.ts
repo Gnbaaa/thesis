@@ -19,7 +19,7 @@ router.get('/:id', validateParams(donationPostIdParams), ctrl.getById);
 router.post(
   '/',
   authRequired,
-  requireRole('ngo', 'admin'),
+  requireRole('ngo'),
   validateBody(createDonationPostBody),
   ctrl.create,
 );

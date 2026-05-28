@@ -17,7 +17,7 @@ export async function list(req: Request, res: Response) {
 export async function create(req: Request, res: Response) {
   const userId = req.user!.id;
   const body = req.body as CreateBody;
-  const created = await svc.createPet({ ownerId: userId, body });
+  const created = await svc.createPet({ ownerId: userId, ownerRole: req.user!.role, body });
   res.status(201).json(created);
 }
 
@@ -33,5 +33,12 @@ export async function update(req: Request, res: Response) {
   const body = req.body as UpdateBody;
   const out = await svc.updatePet({ petId: p.id, ownerId: userId, body });
   res.json(out);
+}
+
+export async function remove(req: Request, res: Response) {
+  const userId = req.user!.id;
+  const p = (req as Request & { validatedParams?: unknown }).validatedParams as IdParams;
+  await svc.deletePet({ petId: p.id, ownerId: userId });
+  res.status(204).send();
 }
 

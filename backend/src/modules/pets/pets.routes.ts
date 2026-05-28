@@ -13,6 +13,7 @@ router.get('/', validateQuery(listPetsQuery), ctrl.list);
 router.get('/:id', authOptional, validateParams(petIdParams), ctrl.getById);
 router.post('/', authRequired, validateBody(createPetBody), ctrl.create);
 router.patch('/:id', authRequired, validateParams(petIdParams), validateBody(updatePetBody), ctrl.update);
+router.delete('/:id', authRequired, validateParams(petIdParams), ctrl.remove);
 
 export { router as petsRouter };
 

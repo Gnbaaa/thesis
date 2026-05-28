@@ -6,6 +6,7 @@ import { validateBody } from '../../shared/validate';
 import { validateQuery } from '../../shared/validateQuery';
 import { createNgoApplicationBody } from './ngo.schema';
 import { listQuery, updateStatusBody } from './admin/admin.schema';
+import { reportsQuery } from './reports/reports.schema';
 import * as ctrl from './ngo.controller';
 import * as adminCtrl from './admin/admin.controller';
 import * as reportsCtrl from './reports/reports.controller';
@@ -33,7 +34,7 @@ router.post(
 );
 
 // UC-014: Үйл ажиллагааны тайлан.
-router.get('/reports', authRequired, reportsCtrl.getReports);
+router.get('/reports', authRequired, validateQuery(reportsQuery), reportsCtrl.getReports);
 
 router.get(
   '/admin/applications',

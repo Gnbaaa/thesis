@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AdoptionRequestStatusBadge } from '@/features/adoption/adoptionRequestStatusBadge';
 import { getMyAdoptionRequests } from '@/features/adoption/inboxApi';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ScrollTable } from '@/components/ui/ScrollTable';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
 
@@ -42,7 +43,7 @@ export default function UserDashboardPage() {
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-border-card bg-surface-card">
-        <div className="flex items-center justify-between border-b border-border-card px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-2 border-b border-border-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-[15px] font-semibold text-text-heading">{t('dashboard.user.recent.title')}</p>
           <Link
             to="/dashboard/inbox"
@@ -56,8 +57,8 @@ export default function UserDashboardPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px]">
+        <ScrollTable minWidth={640}>
+          <table className="w-full">
             <thead className="border-b border-border-card bg-surface-muted">
               <tr className="text-left text-xs font-semibold text-text-muted">
                 <th className="px-4 py-3">{t('dashboard.user.cols.petName')}</th>
@@ -106,7 +107,7 @@ export default function UserDashboardPage() {
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollTable>
       </div>
     </DashboardLayout>
   );

@@ -28,6 +28,7 @@ export type VolunteerPostDetail = VolunteerPostListItem & {
   updatedAt: string;
   registeredCount: number;
   isRegisteredByViewer: boolean;
+  photoPublicId: string | null;
 };
 
 export type VolunteerPostListResponse = {

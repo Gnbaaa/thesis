@@ -18,6 +18,7 @@ import {
 import { DonationStatusBadge } from '@/features/donations/donationStatusBadge';
 import { donationStatusLabel } from '@/features/donations/donationStatusLabel';
 import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Modal } from '@/components/ui/Modal';
 import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
@@ -91,6 +92,8 @@ export default function DonationsDetailPage() {
 
   const postId = typeof id === 'string' ? id : '';
   const detailKey = ['donations', 'detail', postId] as const;
+  const [donateOpen, setDonateOpen] = useState(false);
+  const [donateSubmitting, setDonateSubmitting] = useState(false);
 
   const query = useQuery({
     queryKey: detailKey,
@@ -274,20 +277,47 @@ export default function DonationsDetailPage() {
           </div>
 
           {showDonateForm && canRenderStripe ? (
-            <Elements stripe={stripePromise} options={elementsOptions}>
-              <DonationForm
-                postId={postId}
-                loggedIn={loggedIn}
-                onLoginRequired={() => navigate('/login')}
-                onSuccess={(next) => {
-                  if (next) {
-                    queryClient.setQueryData<DonationPostDetail>(detailKey, next);
-                  } else {
-                    queryClient.invalidateQueries({ queryKey: detailKey });
-                  }
-                }}
-              />
-            </Elements>
+            <>
+              <button
+                type="button"
+                onClick={() => setDonateOpen(true)}
+                className={cn(
+                  btnPrimary,
+                  focusRing,
+                  'h-[50px] w-full rounded-[10px] text-[15px] font-semibold',
+                )}
+              >
+                {t('donations.detail.openDonate')}
+              </button>
+              <Modal
+                open={donateOpen}
+                onClose={() => !donateSubmitting && setDonateOpen(false)}
+                title={t('donations.detail.formTitle')}
+              >
+                {donateOpen ? (
+                  <Elements stripe={stripePromise} options={elementsOptions}>
+                    <DonationForm
+                      postId={postId}
+                      loggedIn={loggedIn}
+                      hideTitle
+                      onSubmittingChange={setDonateSubmitting}
+                      onLoginRequired={() => {
+                        setDonateOpen(false);
+                        navigate('/login');
+                      }}
+                      onSuccess={(next) => {
+                        if (next) {
+                          queryClient.setQueryData<DonationPostDetail>(detailKey, next);
+                        } else {
+                          queryClient.invalidateQueries({ queryKey: detailKey });
+                        }
+                        setDonateOpen(false);
+                      }}
+                    />
+                  </Elements>
+                ) : null}
+              </Modal>
+            </>
           ) : null}
 
           {showDonateForm && !canRenderStripe ? (
@@ -319,22 +349,28 @@ export default function DonationsDetailPage() {
                 {t('donations.detail.recentEmpty')}
               </p>
             ) : (
-              data.recentTransactions.map((tx: DonationTransactionPublic) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between gap-4 border-b border-border-card px-6 py-3.5 last:border-b-0"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium text-text">
-                      {tx.donorDisplayName}
-                    </p>
-                    <p className="text-[11px] text-text-muted">{timeAgo(tx.createdAt, t)}</p>
+              <div
+                className={cn(
+                  data.recentTransactions.length > 2 && 'max-h-[7.5rem] overflow-y-auto',
+                )}
+              >
+                {data.recentTransactions.map((tx: DonationTransactionPublic) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between gap-4 border-b border-border-card px-6 py-3.5 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-medium text-text">
+                        {tx.donorDisplayName}
+                      </p>
+                      <p className="text-[11px] text-text-muted">{timeAgo(tx.createdAt, t)}</p>
+                    </div>
+                    <span className="text-[13px] font-semibold text-text">
+                      {formatMnt(tx.amount)}
+                    </span>
                   </div>
-                  <span className="text-[13px] font-semibold text-text">
-                    {formatMnt(tx.amount)}
-                  </span>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </aside>
@@ -346,11 +382,20 @@ export default function DonationsDetailPage() {
 type DonationFormProps = {
   postId: string;
   loggedIn: boolean;
+  hideTitle?: boolean;
+  onSubmittingChange?: (submitting: boolean) => void;
   onLoginRequired: () => void;
   onSuccess: (next: DonationPostDetail | null) => void;
 };
 
-function DonationForm({ postId, loggedIn, onLoginRequired, onSuccess }: DonationFormProps) {
+function DonationForm({
+  postId,
+  loggedIn,
+  hideTitle = false,
+  onSubmittingChange,
+  onLoginRequired,
+  onSuccess,
+}: DonationFormProps) {
   const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
@@ -396,6 +441,7 @@ function DonationForm({ postId, loggedIn, onLoginRequired, onSuccess }: Donation
     }
 
     setSubmitting(true);
+    onSubmittingChange?.(true);
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
@@ -436,17 +482,23 @@ function DonationForm({ postId, loggedIn, onLoginRequired, onSuccess }: Donation
       setStripeError(message);
     } finally {
       setSubmitting(false);
+      onSubmittingChange?.(false);
     }
   }
 
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-4 rounded-[12px] border border-border-card bg-surface-card px-7 py-6"
+      className={cn(
+        'flex flex-col gap-4',
+        hideTitle ? 'px-5 py-4' : 'rounded-[12px] border border-border-card bg-surface-card px-7 py-6',
+      )}
     >
-      <h2 className="text-[15px] font-semibold text-text-heading">
-        {t('donations.detail.formTitle')}
-      </h2>
+      {!hideTitle ? (
+        <h2 className="text-[15px] font-semibold text-text-heading">
+          {t('donations.detail.formTitle')}
+        </h2>
+      ) : null}
 
       <label className="grid gap-2">
         <span className="text-sm font-medium text-text-secondary">

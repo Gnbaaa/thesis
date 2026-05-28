@@ -93,7 +93,7 @@ export default function DonationsAddPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const loggedIn = useIsLoggedIn();
   const role = loggedIn ? getAuthRole() : null;
-  const canCreate = role === 'ngo' || role === 'admin';
+  const canCreate = role === 'ngo';
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 

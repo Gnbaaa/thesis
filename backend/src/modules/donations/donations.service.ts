@@ -46,8 +46,12 @@ export async function listDonationPosts(query: DonationPostListQuery) {
  */
 export async function getOwnerActivityReport(
   ownerId: string,
+  range?: { from?: string; to?: string },
 ): Promise<OwnerDonationActivityReport> {
-  return await repo.getOwnerDonationActivityReport(ownerId, { transactionsLimit: 50 });
+  return await repo.getOwnerDonationActivityReport(ownerId, {
+    transactionsLimit: range ? 200 : 50,
+    range,
+  });
 }
 
 export async function getDonationPostById(id: string) {

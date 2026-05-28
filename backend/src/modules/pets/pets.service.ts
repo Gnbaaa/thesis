@@ -22,13 +22,20 @@ export async function listPets(query: PetListQuery) {
  */
 export async function getOwnerActivityReport(
   ownerId: string,
+  range?: { from?: string; to?: string },
 ): Promise<OwnerPetActivityReport> {
-  return await repo.getOwnerPetActivityReport(ownerId, { recentLimit: 20 });
+  return await repo.getOwnerPetActivityReport(ownerId, {
+    recentLimit: range ? 200 : 20,
+    range,
+  });
 }
 
 type CreateBody = z.infer<typeof createPetBody>;
 
-export async function createPet(params: { ownerId: string; body: CreateBody }) {
+export async function createPet(params: { ownerId: string; ownerRole: string; body: CreateBody }) {
+  if (params.ownerRole === 'admin') {
+    throw new ForbiddenError('Админ энэ зар нэмэх боломжгүй.', 'ADMIN_CANNOT_CREATE_PET');
+  }
   const b = params.body;
   const created = await repo.createPet({
     ownerId: params.ownerId,
@@ -95,5 +102,21 @@ export async function updatePet(params: { petId: string; ownerId: string; body: 
   }
   await invalidatePetsListCache();
   return updated;
+}
+
+export async function deletePet(params: { petId: string; ownerId: string }) {
+  const owner = await repo.findPetOwnerId(params.petId);
+  if (!owner) {
+    throw new NotFoundError('Амьтны зар олдсонгүй', 'PET_NOT_FOUND');
+  }
+  if (owner !== params.ownerId) {
+    throw new ForbiddenError('Та энэ амьтны зарыг устгах эрхгүй байна.', 'PET_DELETE_FORBIDDEN');
+  }
+
+  const deleted = await repo.deletePet({ id: params.petId, ownerId: params.ownerId });
+  if (!deleted) {
+    throw new NotFoundError('Амьтны зар олдсонгүй', 'PET_NOT_FOUND');
+  }
+  await invalidatePetsListCache();
 }
 

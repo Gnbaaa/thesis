@@ -7,10 +7,8 @@ export function normaliseUserStatus(raw: string | null | undefined): UserAccount
   return 'active';
 }
 
-/**
- * Нэвтрэх эсвэл шинэ token авахын өмнө дуудна (login, refresh, OAuth, authRequired).
- * Түдгэлзсэн/хаагдсан хэрэглэгчид 403 буцаана — FR-13, NFR-S.
- */
+
+
 export function assertUserMayAuthenticate(status: UserAccountStatus): void {
   if (status === 'suspended') {
     throw new ForbiddenError(

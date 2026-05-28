@@ -12,11 +12,7 @@ export async function listUsers(query: AdminUserListQuery): Promise<AdminUserLis
   return await repo.listAdminUsers(query);
 }
 
-/**
- * UC-011: Admin нь хэрэглэгчийн дүрийг өөрчилнө.
- * - Өөрийгөө demote хийхээс хамгаалах (admin → user/ngo) — тогтолцоог админгүй болгохгүй.
- * - Аудит логийг хадгална.
- */
+
 export async function setUserRole(params: {
   adminId: string;
   targetId: string;
@@ -43,9 +39,7 @@ export async function setUserRole(params: {
   return await repo.findAdminUserById(params.targetId);
 }
 
-/**
- * UC-011: Admin нь хэрэглэгчийн төлвийг өөрчилнө (түдгэлзүүлэх / хаах / сэргээх).
- */
+
 export async function setUserStatus(params: {
   adminId: string;
   targetId: string;

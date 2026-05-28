@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { getPet, type PetDetail, type PetSpecies } from '@/features/pets/petsApi';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { deletePet, getPet, type PetDetail, type PetSpecies } from '@/features/pets/petsApi';
 import { PetStatusBadge } from '@/features/pets/petStatusBadge';
 import { petStatusLabel } from '@/features/pets/petStatusLabel';
 import { CenteredPage } from '@/components/layout/CenteredPage';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import { getAuthUserId, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { ButtonLink } from '@/components/ui/ButtonLink';
@@ -53,6 +55,7 @@ export default function PetDetailPage() {
   const { id } = useParams();
 
   const petId = typeof id === 'string' ? id : '';
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const query = useQuery({
     queryKey: ['pets', 'detail', petId],
     queryFn: () => getPet(petId),
@@ -62,6 +65,14 @@ export default function PetDetailPage() {
   const data = query.data;
   const title = data?.name ?? t('pets.detail.title');
   const isOwnListing = Boolean(data?.owner?.id && getAuthUserId() && data.owner.id === getAuthUserId());
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePet(petId),
+    onSuccess: () => {
+      setDeleteOpen(false);
+      navigate('/pets');
+    },
+  });
 
   const startChat = (ownerId: string) => {
     const chatPath = `/chat?to=${encodeURIComponent(ownerId)}`;
@@ -180,13 +191,21 @@ export default function PetDetailPage() {
 
           <div className="mt-6">
             {isOwnListing ? (
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <ButtonLink
                   to={`/pets/${petId}/edit`}
                   className="h-[50px] w-full max-w-[320px] rounded-input text-[15px]"
                 >
                   {t('pets.detail.edit')}
                 </ButtonLink>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-[50px] w-full max-w-[320px] rounded-input border-danger-border text-[15px] text-danger-text hover:bg-danger-surface"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  {t('pets.detail.delete')}
+                </Button>
               </div>
             ) : data.status === 'adopted' ? (
               <div className="flex justify-center">
@@ -235,6 +254,37 @@ export default function PetDetailPage() {
           </div>
         </div>
       </div>
+
+      <Modal open={deleteOpen} onClose={() => !deleteMutation.isPending && setDeleteOpen(false)} title={t('pets.detail.deleteConfirmTitle')}>
+        <div className="px-5 py-4">
+          <p className="text-sm leading-relaxed text-text-secondary">
+            {t('pets.detail.deleteConfirmBody', { name: data.name })}
+          </p>
+          {deleteMutation.isError ? (
+            <p className="mt-3 text-sm text-danger-text" role="alert">
+              {t('pets.detail.deleteError')}
+            </p>
+          ) : null}
+          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={deleteMutation.isPending}
+              onClick={() => setDeleteOpen(false)}
+            >
+              {t('pets.detail.deleteCancel')}
+            </Button>
+            <Button
+              type="button"
+              className="border-danger-border bg-danger-text text-white hover:opacity-90"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+            >
+              {deleteMutation.isPending ? t('pets.detail.deleting') : t('pets.detail.deleteConfirmAction')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </CenteredPage>
   );
 }

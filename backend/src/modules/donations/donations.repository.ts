@@ -1,3 +1,5 @@
+import type { DateRangeFilter } from '../../shared/dateRangeSql';
+import { appendDateRange } from '../../shared/dateRangeSql';
 import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
 import type {
@@ -423,10 +425,14 @@ export async function findDonationNotifyContextByPaymentIntent(
  */
 export async function getOwnerDonationActivityReport(
   ownerId: string,
-  options?: { transactionsLimit?: number },
+  options?: { transactionsLimit?: number; range?: DateRangeFilter },
 ): Promise<OwnerDonationActivityReport> {
   const pool = getPool();
   const limit = Math.min(Math.max(options?.transactionsLimit ?? 50, 1), 200);
+  const range = options?.range;
+
+  const statsValues: unknown[] = [ownerId];
+  const statsRangeSql = appendDateRange('t.created_at', range, statsValues);
 
   const statsRes = await pool.query<{
     total_collected: string | null;
@@ -440,11 +446,15 @@ export async function getOwnerDonationActivityReport(
       COALESCE(COUNT(*) FILTER (WHERE t.status = 'succeeded' AND t.created_at >= NOW() - INTERVAL '7 days'), 0)::text AS last7_count
     FROM donation_transactions t
     INNER JOIN donation_posts p ON p.id = t.post_id
-    WHERE p.owner_id = $1
+    WHERE p.owner_id = $1${statsRangeSql}
     `,
-    [ownerId],
+    statsValues,
   );
   const s = statsRes.rows[0]!;
+
+  const txValues: unknown[] = [ownerId];
+  const txRangeSql = appendDateRange('t.created_at', range, txValues);
+  txValues.push(limit);
 
   const txRes = await pool.query<{
     id: string;
@@ -464,11 +474,11 @@ export async function getOwnerDonationActivityReport(
       t.stripe_payment_intent_id
     FROM donation_transactions t
     INNER JOIN donation_posts p ON p.id = t.post_id
-    WHERE p.owner_id = $1
+    WHERE p.owner_id = $1${txRangeSql}
     ORDER BY t.created_at DESC
-    LIMIT $2
+    LIMIT $${txValues.length}
     `,
-    [ownerId, limit],
+    txValues,
   );
 
   const transactions: OwnerDonationActivityTransaction[] = txRes.rows.map((r) => ({

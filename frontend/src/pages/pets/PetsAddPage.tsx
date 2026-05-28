@@ -25,7 +25,7 @@ import {
   listingTextareaClass,
 } from '@/components/forms/listingFormStyles';
 import { Button } from '@/components/ui/Button';
-import { useIsLoggedIn } from '@/lib/authSession';
+import { getAuthRole, useIsLoggedIn } from '@/lib/authSession';
 import { cn } from '@/lib/cn';
 import { alertError, focusRing } from '@/lib/uiClasses';
 
@@ -90,6 +90,8 @@ export default function PetsAddPage() {
   const schema = useFormSchema();
   const fileRef = useRef<HTMLInputElement>(null);
   const loggedIn = useIsLoggedIn();
+  const role = loggedIn ? getAuthRole() : null;
+  const canCreate = loggedIn && role !== 'admin';
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -179,6 +181,17 @@ export default function PetsAddPage() {
           <Link to="/login" className="font-medium text-accent underline">
             {t('pets.create.loginFirst')}
           </Link>
+        </p>
+      </CenteredPage>
+    );
+  }
+
+  if (!canCreate) {
+    return (
+      <CenteredPage maxWidth="form">
+        <ListingFormHeader backTo="/pets" backLabel={t('pets.create.backList')} />
+        <p className="mt-4 rounded-card border border-border-card bg-surface-card px-4 py-3 text-sm text-text-muted">
+          {t('pets.create.roleRequired')}
         </p>
       </CenteredPage>
     );

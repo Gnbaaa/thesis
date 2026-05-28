@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { PetStatusBadge } from '@/features/pets/petStatusBadge';
 import { Button } from '@/components/ui/Button';
 import { listPets, type PetListResponse, type PetSex, type PetSpecies, type PetStatus } from '@/features/pets/petsApi';
-import { useIsLoggedIn } from '@/lib/authSession';
+import { getAuthRole, useIsLoggedIn } from '@/lib/authSession';
 import {
   catalogBtnDisabled,
   catalogCard,
@@ -37,6 +37,8 @@ function metaLine(p: { species: PetSpecies; breed: string | null; ageYears: numb
 export default function PetsListPage() {
   const { t } = useTranslation();
   const loggedIn = useIsLoggedIn();
+  const role = loggedIn ? getAuthRole() : null;
+  const canCreate = loggedIn && role !== 'admin';
   const [q, setQ] = useState('');
   const [species, setSpecies] = useState<'all' | PetSpecies>('all');
   const [sex, setSex] = useState<'all' | PetSex>('all');
@@ -75,7 +77,7 @@ export default function PetsListPage() {
             className={cn(catalogSearchGrow, catalogFocus)}
             autoComplete="off"
           />
-          {loggedIn ? (
+          {canCreate ? (
             <Link to="/pets/new" className="shrink-0">
               <Button size="sm" className="h-9 w-full sm:w-auto">
                 {t('pets.add')}

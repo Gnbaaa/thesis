@@ -13,6 +13,7 @@ import {
 import { CenteredPage } from '@/components/layout/CenteredPage';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { ScrollTable } from '@/components/ui/ScrollTable';
 import { getAuthUserId } from '@/lib/authSession';
 import { catalogPaginationRow } from '@/lib/catalogStyles';
 import { cn } from '@/lib/cn';
@@ -140,7 +141,7 @@ export default function AdminUsersPage() {
           value={role}
           onChange={(e) => onRoleChange(e.target.value as RoleFilter)}
           className={cn(
-            'h-10 rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text',
+            'h-10 w-full rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text sm:w-auto',
             focusRing,
           )}
         >
@@ -153,7 +154,7 @@ export default function AdminUsersPage() {
           value={status}
           onChange={(e) => onStatusChange(e.target.value as StatusFilter)}
           className={cn(
-            'h-10 rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text',
+            'h-10 w-full rounded-lg border border-border-input bg-surface-card px-3 text-sm text-text sm:w-auto',
             focusRing,
           )}
         >
@@ -171,16 +172,17 @@ export default function AdminUsersPage() {
       ) : null}
 
       <div className="mt-5 overflow-hidden rounded-card border border-border-card bg-surface-card">
-        <table className="w-full table-fixed">
+        <ScrollTable minWidth={920}>
+        <table className="w-full">
           <thead className="border-b border-border-card bg-surface-muted">
             <tr className="text-left text-xs font-semibold text-text-muted">
-              <th className="px-6 py-3 w-[56px]">{t('adminUsers.cols.no')}</th>
+              <th className="px-4 py-3 sm:px-6">{t('adminUsers.cols.no')}</th>
               <th className="px-4 py-3">{t('adminUsers.cols.name')}</th>
-              <th className="px-4 py-3 w-[220px]">{t('adminUsers.cols.email')}</th>
-              <th className="px-4 py-3 w-[160px]">{t('adminUsers.cols.phone')}</th>
-              <th className="px-4 py-3 w-[120px]">{t('adminUsers.cols.role')}</th>
-              <th className="px-4 py-3 w-[140px]">{t('adminUsers.cols.status')}</th>
-              <th className="px-4 py-3 w-[140px]">{t('adminUsers.cols.action')}</th>
+              <th className="px-4 py-3">{t('adminUsers.cols.email')}</th>
+              <th className="px-4 py-3">{t('adminUsers.cols.phone')}</th>
+              <th className="px-4 py-3">{t('adminUsers.cols.role')}</th>
+              <th className="px-4 py-3">{t('adminUsers.cols.status')}</th>
+              <th className="px-4 py-3">{t('adminUsers.cols.action')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-card text-sm">
@@ -199,7 +201,7 @@ export default function AdminUsersPage() {
             ) : (
               items.map((u, idx) => (
                 <tr key={u.id} className="text-text-secondary">
-                  <td className="px-6 py-3 text-text-muted">
+                  <td className="px-4 py-3 text-text-muted sm:px-6">
                     {(page - 1) * PAGE_SIZE + idx + 1}
                   </td>
                   <td className="px-4 py-3 text-text">{fullName(u)}</td>
@@ -233,6 +235,7 @@ export default function AdminUsersPage() {
             )}
           </tbody>
         </table>
+        </ScrollTable>
       </div>
 
       {totalPages > 1 ? (

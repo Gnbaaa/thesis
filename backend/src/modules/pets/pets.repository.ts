@@ -1,5 +1,7 @@
 import { getPool } from '../../infra/db/pool';
 import { getImageUrl } from '../../shared/storage';
+import type { DateRangeFilter } from '../../shared/dateRangeSql';
+import { appendDateRange } from '../../shared/dateRangeSql';
 import type {
   CreatePetInput,
   OwnerPetActivityReport,
@@ -306,19 +308,23 @@ export async function updatePet(input: {
  */
 export async function getOwnerPetActivityReport(
   ownerId: string,
-  options?: { recentLimit?: number },
+  options?: { recentLimit?: number; range?: DateRangeFilter },
 ): Promise<OwnerPetActivityReport> {
   const pool = getPool();
-  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 100);
+  const limit = Math.min(Math.max(options?.recentLimit ?? 20, 1), 200);
+  const range = options?.range;
+
+  const statsValues: unknown[] = [ownerId];
+  const statsRangeSql = appendDateRange('created_at', range, statsValues);
 
   const statsRes = await pool.query<{ status: string; cnt: string }>(
     `
     SELECT status, COUNT(*)::text AS cnt
     FROM pets
-    WHERE owner_id = $1
+    WHERE owner_id = $1${statsRangeSql}
     GROUP BY status
     `,
-    [ownerId],
+    statsValues,
   );
   const byStatus: Record<PetStatus, number> = { available: 0, pending: 0, adopted: 0 };
   let totalCount = 0;
@@ -329,6 +335,10 @@ export async function getOwnerPetActivityReport(
       byStatus[row.status as PetStatus] = n;
     }
   }
+
+  const recentValues: unknown[] = [ownerId];
+  const recentRangeSql = appendDateRange('created_at', range, recentValues);
+  recentValues.push(limit);
 
   const recentRes = await pool.query<{
     id: string;
@@ -341,11 +351,11 @@ export async function getOwnerPetActivityReport(
     `
     SELECT id, name, species, status, photo_public_id, created_at
     FROM pets
-    WHERE owner_id = $1
+    WHERE owner_id = $1${recentRangeSql}
     ORDER BY created_at DESC
-    LIMIT $2
+    LIMIT $${recentValues.length}
     `,
-    [ownerId, limit],
+    recentValues,
   );
 
   const recent: OwnerPetActivityItem[] = recentRes.rows.map((r) => ({
@@ -374,5 +384,18 @@ export async function findPetOwnerId(petId: string): Promise<string | null> {
     [petId],
   );
   return rows[0]?.owner_id ?? null;
+}
+
+export async function deletePet(input: { id: string; ownerId: string }): Promise<{ id: string } | null> {
+  const { rows } = await getPool().query<{ id: string }>(
+    `
+    DELETE FROM pets
+    WHERE id = $1 AND owner_id = $2
+    RETURNING id
+  `,
+    [input.id, input.ownerId],
+  );
+  const row = rows[0];
+  return row ? { id: row.id } : null;
 }
 

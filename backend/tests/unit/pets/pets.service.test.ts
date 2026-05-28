@@ -130,11 +130,35 @@ describe('pets.service', () => {
     });
   });
 
+  describe('deletePet', () => {
+    it('throws when pet does not exist', async () => {
+      mockRepo.findPetOwnerId.mockResolvedValue(null);
+      await expect(petsService.deletePet({ petId: 'pet-1', ownerId: 'owner-1' })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('throws when caller is not owner', async () => {
+      mockRepo.findPetOwnerId.mockResolvedValue('other-owner');
+      await expect(petsService.deletePet({ petId: 'pet-1', ownerId: 'owner-1' })).rejects.toThrow(
+        ForbiddenError,
+      );
+    });
+
+    it('deletes pet for owner', async () => {
+      mockRepo.findPetOwnerId.mockResolvedValue('owner-1');
+      mockRepo.deletePet.mockResolvedValue({ id: 'pet-1' });
+      await petsService.deletePet({ petId: 'pet-1', ownerId: 'owner-1' });
+      expect(mockRepo.deletePet).toHaveBeenCalledWith({ id: 'pet-1', ownerId: 'owner-1' });
+    });
+  });
+
   describe('createPet', () => {
     it('trims optional fields and defaults status to available', async () => {
       mockRepo.createPet.mockResolvedValue(samplePet);
       await petsService.createPet({
         ownerId: 'owner-1',
+        ownerRole: 'user',
         body: {
           name: '  Max  ',
           species: 'cat',
@@ -157,6 +181,24 @@ describe('pets.service', () => {
           status: 'available',
         }),
       );
+    });
+
+    it('forbids admin from creating pets', async () => {
+      await expect(
+        petsService.createPet({
+          ownerId: 'admin-1',
+          ownerRole: 'admin',
+          body: {
+            name: 'Max',
+            species: 'cat',
+            sex: 'male',
+            vaccinated: false,
+            neutered: false,
+            spayed: false,
+          },
+        }),
+      ).rejects.toMatchObject({ code: 'ADMIN_CANNOT_CREATE_PET' });
+      expect(mockRepo.createPet).not.toHaveBeenCalled();
     });
   });
 });

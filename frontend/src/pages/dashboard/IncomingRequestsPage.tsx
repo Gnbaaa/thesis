@@ -11,6 +11,7 @@ import {
 import { AdoptionRequestStatusBadge } from '@/features/adoption/adoptionRequestStatusBadge';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Modal } from '@/components/ui/Modal';
+import { ScrollTable } from '@/components/ui/ScrollTable';
 import { cn } from '@/lib/cn';
 import { alertError, btnPrimary, btnSecondary, focusRing } from '@/lib/uiClasses';
 
@@ -89,7 +90,8 @@ export default function IncomingRequestsPage() {
         <div className="border-b border-border-card bg-surface-muted px-5 py-3 text-sm font-semibold text-text-muted">
           {t('dashboard.incoming.tableTitle')}
         </div>
-        <table className="w-full table-fixed">
+        <ScrollTable minWidth={680}>
+          <table className="w-full">
           <thead className="border-b border-border-card bg-surface-muted">
             <tr className="text-left text-xs font-semibold text-text-muted">
               <th className="px-4 py-3">{t('dashboard.incoming.cols.petName')}</th>
@@ -139,6 +141,7 @@ export default function IncomingRequestsPage() {
             )}
           </tbody>
         </table>
+        </ScrollTable>
       </div>
 
       <Modal
@@ -196,7 +199,7 @@ export default function IncomingRequestsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pb-1">
+            <div className="grid grid-cols-1 gap-3 pb-1 sm:grid-cols-2">
               <button
                 type="button"
                 disabled={!canResolve || resolveMutation.isPending}

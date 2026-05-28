@@ -191,7 +191,7 @@ export async function updateGoogleUserProfile(params: {
   return mapRow(row);
 }
 
-/** Middleware-д DB-ийн одоогийн төлвийг шалгах (JWT-д status байхгүй). */
+
 export async function findUserAccountStatusById(
   userId: string,
 ): Promise<UserAccountStatus | null> {
